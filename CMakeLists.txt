@@ -14,6 +14,8 @@ else()
 endif()
 
 # external package setups
+include(cmake/platform.cmake)
+include(cmake/compiler-settings.cmake)
 include(cmake/common-macros.cmake)
 include(cmake/common-dependencies.cmake)
 
@@ -25,8 +27,9 @@ set(PLATFORM_DEP_LIBS "")
 #    set(PLATFORM_DEP_LIBS pthread)
 #endif()
 
-set(ALL_PROJECT_BASE_LIBS vulkan-1 glfw3 ${PLATFORM_DEP_LIBS})
+set(RENDERING_LIBS glfw3 vulkan-1 ${PLATFORM_DEP_LIBS})
 
 #targets
-add_subdirectory(build-test)
-
+add_subdirectory(ip-core)
+add_subdirectory(ip-render)
+add_subdirectory(tutorial)

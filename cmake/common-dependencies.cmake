@@ -40,7 +40,11 @@ else()
 endif()
 
 # vulkan libraries
-find_file(VULKAN_LIBRARY "Lib/vulkan-1.lib")
+if(PLATFORM_SIZE EQUAL 64)
+  find_file(VULKAN_LIBRARY "Lib/vulkan-1.lib")
+else()
+  find_file(VULKAN_LIBRARY "Lib32/vulkan-1.lib")
+endif()
 if (EXISTS ${VULKAN_LIBRARY})
   get_filename_component(VULKAN_LIBRARIES "${VULKAN_LIBRARY}" DIRECTORY)
   link_directories(${VULKAN_LIBRARIES})
@@ -62,6 +66,7 @@ endif()
 
 # glfw libraries
 find_file(GLFW_LIBRARY "lib-vc2015/glfw3.lib") # This sucks
+
 if (EXISTS ${GLFW_LIBRARY})
   get_filename_component(GLFW_LIBRARIES "${GLFW_LIBRARY}" DIRECTORY)
   link_directories(${GLFW_LIBRARIES})

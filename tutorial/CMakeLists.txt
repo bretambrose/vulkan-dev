@@ -1,7 +1,7 @@
-add_project(build-test)
+add_project(tutorial)
 
 file(GLOB PROJECT_HEADERS
-    "include/*.h"
+    "include/vulkan-dev/tutorial/*.h"
 )
 
 file(GLOB PROJECT_SOURCE
@@ -21,13 +21,13 @@ if(WIN32)
 endif()
 
 set(PROJECT_INCLUDES
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include"
 )
+
+include_directories(${PROJECT_INCLUDES})
 
 add_executable(${PROJECT_NAME} ${PROJECT_UNIFIED_SRC})
 
-set(PROJECT_LIBS ${ALL_PROJECT_BASE_LIBS})
-
-target_link_libraries(${PROJECT_NAME} ${PROJECT_LIBS})
+target_link_libraries(${PROJECT_NAME} ip-render ip-core)
 
 
