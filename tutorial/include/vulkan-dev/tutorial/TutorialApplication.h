@@ -1,10 +1,10 @@
 #pragma once
 
-#include <memory>
+#include <ip/core/memory/Memory.h>
 
 namespace IP
 {
-    class IPRender;
+    class IRenderer;
 }
 
 class TutorialApplication 
@@ -22,6 +22,6 @@ class TutorialApplication
 
     private:
 
-        std::unique_ptr<IP::IPRender> m_renderingSystem;
+        IP::UniquePtr<IP::IRenderer> m_renderingSystem;
 
 };

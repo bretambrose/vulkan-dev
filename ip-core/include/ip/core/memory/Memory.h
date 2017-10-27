@@ -30,7 +30,7 @@ T *New( const char *tag, Args&&... args )
 }
 
 template< typename T >
-T *New_Array( const char* tag, size_t count )
+T *NewArray( const char* tag, size_t count )
 {
 	if ( count <= 0 )
 	{
@@ -85,7 +85,7 @@ void Delete( const T *object )
 }
 
 template< typename T >
-void Delete_Array( T *object_array )
+void DeleteArray( T *object_array )
 {
 	if ( object_array == nullptr )
 	{
@@ -109,9 +109,9 @@ void Delete_Array( T *object_array )
 }
 
 template< typename T >
-void Delete_Array( const T *object )
+void DeleteArray( const T *object )
 {
-	Delete_Array( const_cast< T * >( object ) );
+	DeleteArray( const_cast< T * >( object ) );
 }
 
 /////////////////////////////////////////////////////////////////////
@@ -172,14 +172,14 @@ struct Deleter
 
 		template< typename U, class = typename std::enable_if< std::is_convertible< U *, T * >::value, void >::type >
 		Deleter( const Deleter< U >& rhs ) :
-			IsArray( rhs.Get_Is_Array() )
+			IsArray( rhs.GetIsArray() )
 		{}
 
 		void operator()(T *object)
 		{
 			if ( IsArray )
 			{
-				IP::Delete_Array( object );
+				IP::DeleteArray( object );
 			}
 			else
 			{
@@ -187,7 +187,7 @@ struct Deleter
 			}
 		}
 
-		bool Get_Is_Array() const { return IsArray; }
+		bool GetIsArray() const { return IsArray; }
 
 	private:
 
@@ -199,26 +199,26 @@ template< typename T >
 using UniquePtr = std::unique_ptr< T, IP::Deleter< T > >;
 
 template< typename T, typename ...Args >
-UniquePtr< T > Make_Unique(const char *tag, Args&&... args)
+UniquePtr< T > MakeUnique(const char *tag, Args&&... args)
 {
 	return UniquePtr< T >( IP::New< T >( tag, std::forward< Args >( args )... ), IP::Deleter< T >( false ) );
 }
 
 template< typename T >
-UniquePtr< T > Make_Unique_Array(const char *tag, size_t array_size)
+UniquePtr< T > MakeUniqueArray(const char *tag, size_t array_size)
 {
-	return UniquePtr< T >( IP::New_Array< T >( tag, array_size ), IP::Deleter< T >( true ) );
+	return UniquePtr< T >( IP::NewArray< T >( tag, array_size ), IP::Deleter< T >( true ) );
 }
 
 template< typename T, typename U, typename ...Args >
-UniquePtr< U > Make_Unique_Upcast(const char *tag, Args&&... args)
+UniquePtr< U > MakeUniqueUpcast(const char *tag, Args&&... args)
 {
 	return UniquePtr< U >( IP::New< T >( tag, std::forward< Args >( args )... ), IP::Deleter< U >( false ) );
 }
 
 // shared pointers
 template< typename T, typename ...Args >
-std::shared_ptr< T > Make_Shared(const char *tag, Args&&... args)
+std::shared_ptr< T > MakeShared(const char *tag, Args&&... args)
 {
 	IP_UNREFERENCED_PARAM( tag );
 
@@ -226,7 +226,7 @@ std::shared_ptr< T > Make_Shared(const char *tag, Args&&... args)
 }
 
 template< typename T, typename U, typename ...Args >
-std::shared_ptr< U > Make_Shared_Upcast(const char *tag, Args&&... args)
+std::shared_ptr< U > MakeSharedUpcast(const char *tag, Args&&... args)
 {
 	IP_UNREFERENCED_PARAM( tag );
 
