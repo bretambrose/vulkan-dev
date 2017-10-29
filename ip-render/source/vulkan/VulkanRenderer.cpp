@@ -57,8 +57,10 @@ VulkanRenderer::VulkanRenderer() :
     m_logicalDevice(VK_NULL_HANDLE),
     m_surface(VK_NULL_HANDLE),
     m_swapChain(VK_NULL_HANDLE),
+    m_swapChainImageViews(),
     m_presentationQueue(VK_NULL_HANDLE),
     m_graphicsQueue(VK_NULL_HANDLE),
+    m_swapChainImages(),
     m_vulkanExtensionNames(),
     m_deviceExtensionNames(),
     m_validationLayerNames(),
@@ -153,6 +155,7 @@ void VulkanRenderer::InitializeVulkan()
     InitializeSurface();
     InitializeDevice();
     InitializeSwapChain();
+    InitializeSwapChainImageViews();
 }
 
 void VulkanRenderer::InitializeVulkanInstance()
@@ -197,6 +200,8 @@ void VulkanRenderer::InitializeVulkanInstance()
 
 void VulkanRenderer::CleanupVulkan()
 {
+    CleanupSwapChainImageViews();
+
     if (m_swapChain)
     {
         vkDestroySwapchainKHR(m_logicalDevice, m_swapChain, nullptr);
@@ -717,6 +722,60 @@ void VulkanRenderer::InitializeSwapChain()
     {
         THROW_IP_EXCEPTION("Vulkan: Failed to build swap chain");
     }
+
+    uint32_t swapImageCount = 0;
+    result = vkGetSwapchainImagesKHR(m_logicalDevice, m_swapChain, &swapImageCount, nullptr);
+    if (result != VK_SUCCESS)
+    {
+        THROW_IP_EXCEPTION("Vulkan: Failed to retrieve swap chain image count");
+    }
+
+    m_swapChainImages.resize(swapImageCount);
+    result = vkGetSwapchainImagesKHR(m_logicalDevice, m_swapChain, &swapImageCount, m_swapChainImages.data());
+    if (result != VK_SUCCESS)
+    {
+        THROW_IP_EXCEPTION("Vulkan: Failed to retrieve swap chain image set");
+    }
+}
+
+void VulkanRenderer::InitializeSwapChainImageViews()
+{
+    for (size_t i = 0; i < m_swapChainImages.size(); ++i)
+    {
+        VkImageViewCreateInfo createInfo = {};
+        createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        createInfo.image = m_swapChainImages[i];
+        createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        createInfo.format = m_swapSurfaceFormat.format;
+        createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        createInfo.subresourceRange.baseMipLevel = 0;
+        createInfo.subresourceRange.levelCount = 1;
+        createInfo.subresourceRange.baseArrayLayer = 0;
+        createInfo.subresourceRange.layerCount = 1;
+
+        VkImageView imageView = VK_NULL_HANDLE;
+        VkResult result = vkCreateImageView(m_logicalDevice, &createInfo, nullptr, &imageView);
+        if (result != VK_SUCCESS)
+        {
+            THROW_IP_EXCEPTION("Vulkan: Unable to create image view for swap chain image");
+        }
+
+        m_swapChainImageViews.push_back(imageView);
+    }
+}
+
+void VulkanRenderer::CleanupSwapChainImageViews()
+{
+    for(const auto& imageView : m_swapChainImageViews)
+    {
+        vkDestroyImageView(m_logicalDevice, imageView, nullptr);
+    }
+
+    m_swapChainImageViews.clear();
 }
 
 } // namespace IP

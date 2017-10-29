@@ -48,6 +48,9 @@ class VulkanRenderer : public IRenderer
         VkPresentModeKHR SelectSwapPresentationMode() const;
         VkExtent2D SelectSwapExtent() const;
 
+        void InitializeSwapChainImageViews();
+        void CleanupSwapChainImageViews();
+
         void BuildVulkanExtensionSet();
         IP::Vector<IP::String> GetOptionalVulkanExtensions() const;
 
@@ -70,8 +73,11 @@ class VulkanRenderer : public IRenderer
         VkDevice m_logicalDevice;
         VkSurfaceKHR m_surface;
         VkSwapchainKHR m_swapChain;
+        IP::Vector<VkImageView> m_swapChainImageViews;
+        
         VkQueue m_presentationQueue;
         VkQueue m_graphicsQueue;
+        IP::Vector<VkImage> m_swapChainImages;
 
         IP::Vector<IP::String> m_vulkanExtensionNames;
         IP::Vector<IP::String> m_deviceExtensionNames;
