@@ -56,8 +56,16 @@ VulkanRenderer::VulkanRenderer() :
     m_physicalDevice(VK_NULL_HANDLE),
     m_logicalDevice(VK_NULL_HANDLE),
     m_surface(VK_NULL_HANDLE),
-    m_extensionNames(),
+    m_swapChain(VK_NULL_HANDLE),
+    m_presentationQueue(VK_NULL_HANDLE),
+    m_graphicsQueue(VK_NULL_HANDLE),
+    m_vulkanExtensionNames(),
+    m_deviceExtensionNames(),
     m_validationLayerNames(),
+    m_selectedDeviceProperties(),
+    m_swapSurfaceFormat(),
+    m_swapPresentationMode(),
+    m_swapExtents(),
     m_glfwTerminate(false)
 {
     
@@ -144,6 +152,7 @@ void VulkanRenderer::InitializeVulkan()
     InitializeValidationCallback();
     InitializeSurface();
     InitializeDevice();
+    InitializeSwapChain();
 }
 
 void VulkanRenderer::InitializeVulkanInstance()
@@ -154,7 +163,7 @@ void VulkanRenderer::InitializeVulkanInstance()
 
     BuildVulkanExtensionSet();
     IP::Vector<const char *> rawExtensionNames;
-    std::for_each(m_extensionNames.cbegin(), m_extensionNames.cend(), [&](const IP::String& name){ rawExtensionNames.push_back(name.c_str()); });
+    std::for_each(m_vulkanExtensionNames.cbegin(), m_vulkanExtensionNames.cend(), [&](const IP::String& name){ rawExtensionNames.push_back(name.c_str()); });
 
     VkApplicationInfo applicationInfo = {};
     applicationInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -188,16 +197,22 @@ void VulkanRenderer::InitializeVulkanInstance()
 
 void VulkanRenderer::CleanupVulkan()
 {
+    if (m_swapChain)
+    {
+        vkDestroySwapchainKHR(m_logicalDevice, m_swapChain, nullptr);
+        m_swapChain = VK_NULL_HANDLE;
+    }
+
     if (m_logicalDevice)
     {
         vkDestroyDevice(m_logicalDevice, nullptr);
-        m_logicalDevice = nullptr;
+        m_logicalDevice = VK_NULL_HANDLE;
     }
 
     if (m_surface)
     {
         vkDestroySurfaceKHR(m_vulkanInstance, m_surface, nullptr);
-        m_surface = nullptr;
+        m_surface = VK_NULL_HANDLE;
     }
 
     if (m_validationCallback)
@@ -251,7 +266,7 @@ void VulkanRenderer::BuildVulkanExtensionSet()
             THROW_IP_EXCEPTION("Vulkan drivers missing required extension: ", requiredExtension);
         }
 
-        m_extensionNames.push_back(requiredExtension);
+        m_vulkanExtensionNames.push_back(requiredExtension);
     }
 
     // build and check optional extensions, filter out on missing
@@ -260,7 +275,7 @@ void VulkanRenderer::BuildVulkanExtensionSet()
     {
         if (presentExtensions.find(extensionName) != presentExtensions.cend())
         {
-            m_extensionNames.push_back(extensionName);
+            m_vulkanExtensionNames.push_back(extensionName);
         }
     }
 }
@@ -409,7 +424,16 @@ void VulkanRenderer::InitializeDevice()
     createInfo.queueCreateInfoCount = static_cast<uint32_t>(deviceQueueCreateInfos.size());
     createInfo.pEnabledFeatures = &deviceFeatures;
 
-    createInfo.enabledExtensionCount = 0;
+    if (!BuildDeviceExtensionSet(m_physicalDevice, m_deviceExtensionNames))
+    {
+        THROW_IP_EXCEPTION("Vulkan: selected device does not have support for required extensions");
+    }
+
+    IP::Vector<const char *> deviceExtensions;
+    std::for_each(m_deviceExtensionNames.cbegin(), m_deviceExtensionNames.cend(), [&](const IP::String& name){deviceExtensions.push_back(name.c_str());});
+
+    createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
+    createInfo.ppEnabledExtensionNames = deviceExtensions.empty() ? nullptr : deviceExtensions.data();
 
     createInfo.enabledLayerCount = static_cast<uint32_t>(s_debugValidationLayers.size());
     if (createInfo.enabledLayerCount > 0)
@@ -422,10 +446,31 @@ void VulkanRenderer::InitializeDevice()
     {
         THROW_IP_EXCEPTION("Vulkan - could not create logical device");
     }
+
+    vkGetDeviceQueue(m_logicalDevice, bestDeviceProperties.m_presentationQueueFamilyIndex, 0, &m_presentationQueue);
+    if (m_presentationQueue == VK_NULL_HANDLE)
+    {
+        THROW_IP_EXCEPTION("Vulkan - could not fetch presentation queue from logical device");
+    }
+
+    vkGetDeviceQueue(m_logicalDevice, bestDeviceProperties.m_graphicsQueueFamilyIndex, 0, &m_graphicsQueue);
+    if (m_graphicsQueue == VK_NULL_HANDLE)
+    {
+        THROW_IP_EXCEPTION("Vulkan - could not fetch graphics queue");
+    }
+
+    ExtractPhysicalDeviceProperties(m_physicalDevice, m_selectedDeviceProperties);
 }
 
-int32_t VulkanRenderer::ScorePhysicalDevice(VkPhysicalDevice device, VulkanDeviceProperties& deviceProperties) const
+void VulkanRenderer::ExtractPhysicalDeviceProperties(VkPhysicalDevice device, VulkanDeviceProperties& deviceProperties) const
 {
+    ExtractQueueFamilyProperties(device, deviceProperties);
+    ExtractSwapChainProperties(device, deviceProperties);
+}
+
+void VulkanRenderer::ExtractQueueFamilyProperties(VkPhysicalDevice device, VulkanDeviceProperties& deviceProperties) const
+{
+    // Queues and queue families
     uint32_t queueFamilyCount = 0;
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
 
@@ -450,14 +495,69 @@ int32_t VulkanRenderer::ScorePhysicalDevice(VkPhysicalDevice device, VulkanDevic
             }
         }
 
-        // if we've found a single queue that satisfies all of our needs then stop, otherwise keep looking
-        if (deviceProperties.m_graphicsQueueFamilyIndex >= 0 && deviceProperties.m_graphicsQueueFamilyIndex == deviceProperties.m_presentationQueueFamilyIndex)
+        IP::Vector<IP::String> supportedExtensions;
+        deviceProperties.m_supportsRequiredExtensions = BuildDeviceExtensionSet(device, supportedExtensions);
+
+        // if we've found a family with a single queue that satisfies all of our needs then stop, otherwise keep looking
+        if (deviceProperties.MeetsOptimumQueueRequirements())
         {
             break;
         }
     }
+}
 
-    if (deviceProperties.m_graphicsQueueFamilyIndex >= 0 && deviceProperties.m_presentationQueueFamilyIndex >= 0)
+void VulkanRenderer::ExtractSwapChainProperties(VkPhysicalDevice device, VulkanDeviceProperties& deviceProperties) const
+{
+    // Swap chain related
+    VkResult result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, m_surface, &deviceProperties.m_surfaceCapabilities);
+    if (result != VK_SUCCESS)
+    {
+        // not fatal, but should log
+        return;
+    }
+
+    uint32_t surfaceFormatCount = 0;
+    result = vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_surface, &surfaceFormatCount, nullptr);
+    if (result != VK_SUCCESS)
+    {
+        // not fatal, but should log
+        return;
+    }
+
+    if (surfaceFormatCount > 0) 
+    {
+        deviceProperties.m_surfaceFormats.resize(surfaceFormatCount);
+        result = vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_surface, &surfaceFormatCount, deviceProperties.m_surfaceFormats.data());
+        if (result != VK_SUCCESS)
+        {
+            return;
+        }
+    }
+
+    uint32_t presentationModeCount = 0;
+    result = vkGetPhysicalDeviceSurfacePresentModesKHR(device, m_surface, &presentationModeCount, nullptr);
+    if (result != VK_SUCCESS)
+    {
+        // not fatal, but should log
+        return;
+    }
+
+    if (presentationModeCount > 0) {
+        deviceProperties.m_presentationModes.resize(presentationModeCount);
+        result = vkGetPhysicalDeviceSurfacePresentModesKHR(device, m_surface, &presentationModeCount, deviceProperties.m_presentationModes.data());
+        if (result != VK_SUCCESS)
+        {
+            // not fatal, but should log
+            return;
+        }
+    }
+}
+
+int32_t VulkanRenderer::ScorePhysicalDevice(VkPhysicalDevice device, VulkanDeviceProperties& deviceProperties) const
+{
+    ExtractPhysicalDeviceProperties(device, deviceProperties);
+
+    if (deviceProperties.MeetsMinimumRequirements())
     {
         return 1;
     }
@@ -470,6 +570,152 @@ void VulkanRenderer::InitializeSurface()
     VkResult result = glfwCreateWindowSurface(m_vulkanInstance, m_window, nullptr, &m_surface);
     if (result != VK_SUCCESS) {
         THROW_IP_EXCEPTION("Failed to create window surface");
+    }
+}
+
+bool VulkanRenderer::BuildDeviceExtensionSet(VkPhysicalDevice device, IP::Vector<IP::String>& extensions) const
+{
+    // query what's available
+    uint32_t extensionCount = 0;
+    vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
+
+    IP::Vector<VkExtensionProperties> availableExtensions(extensionCount);
+    vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
+
+    // make an easy to search set
+    IP::Set<IP::String> presentExtensions;
+    std::for_each(availableExtensions.cbegin(), availableExtensions.cend(), [&](const VkExtensionProperties& properties){ presentExtensions.insert(IP::String(properties.extensionName)); });
+
+    // build and check required extensions, throw exception on missing
+    IP::Vector<IP::String> requiredExtensions = GetRequiredDeviceExtensions();
+    for (const auto& requiredExtension : requiredExtensions)
+    {
+        if (presentExtensions.find(requiredExtension) == presentExtensions.cend())
+        {
+            return false;
+        }
+
+        extensions.push_back(requiredExtension);
+    }
+
+    // build and check optional extensions, filter out on missing
+    IP::Vector<IP::String> optionalExtensions = GetOptionalDeviceExtensions();
+    for (const auto& extensionName : optionalExtensions)
+    {
+        if (presentExtensions.find(extensionName) != presentExtensions.cend())
+        {
+            extensions.push_back(extensionName);
+        }
+    }
+
+    return true;
+}
+
+IP::Vector<IP::String> VulkanRenderer::GetRequiredDeviceExtensions() const
+{
+    IP::Vector<IP::String> requiredExtensions;
+    requiredExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+
+    return requiredExtensions;
+}
+
+IP::Vector<IP::String> VulkanRenderer::GetOptionalDeviceExtensions() const
+{
+    IP::Vector<IP::String> optionalExtensions;
+
+    return optionalExtensions;
+}
+
+VkSurfaceFormatKHR VulkanRenderer::SelectSwapSurfaceFormat() const
+{
+    if (m_selectedDeviceProperties.m_surfaceFormats.size() == 1 && m_selectedDeviceProperties.m_surfaceFormats[0].format == VK_FORMAT_UNDEFINED) {
+        return {VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
+    }
+
+    for (const auto& surfaceFormat : m_selectedDeviceProperties.m_surfaceFormats) 
+    {
+        if (surfaceFormat.format == VK_FORMAT_B8G8R8A8_UNORM && surfaceFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+            return surfaceFormat;
+        }
+    }
+
+    return m_selectedDeviceProperties.m_surfaceFormats[0];
+}
+
+VkPresentModeKHR VulkanRenderer::SelectSwapPresentationMode() const
+{
+    for (const auto& presentationMode : m_selectedDeviceProperties.m_presentationModes) {
+        if (presentationMode == VK_PRESENT_MODE_MAILBOX_KHR) {
+            return presentationMode;
+        }
+    }
+
+    return VK_PRESENT_MODE_FIFO_KHR;
+}
+
+VkExtent2D VulkanRenderer::SelectSwapExtent() const
+{
+    if (m_selectedDeviceProperties.m_surfaceCapabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) 
+    {
+        return m_selectedDeviceProperties.m_surfaceCapabilities.currentExtent;
+    }
+
+    VkExtent2D actualExtent = {m_config.m_windowWidth, m_config.m_windowHeight};
+
+    actualExtent.width = std::max(m_selectedDeviceProperties.m_surfaceCapabilities.minImageExtent.width, std::min(m_selectedDeviceProperties.m_surfaceCapabilities.maxImageExtent.width, actualExtent.width));
+    actualExtent.height = std::max(m_selectedDeviceProperties.m_surfaceCapabilities.minImageExtent.height, std::min(m_selectedDeviceProperties.m_surfaceCapabilities.maxImageExtent.height, actualExtent.height));
+
+    return actualExtent;
+}
+
+void VulkanRenderer::InitializeSwapChain()
+{
+    m_swapSurfaceFormat = SelectSwapSurfaceFormat();
+    m_swapPresentationMode = SelectSwapPresentationMode();
+    m_swapExtents = SelectSwapExtent();
+
+    uint32_t imageCount = m_selectedDeviceProperties.m_surfaceCapabilities.minImageCount + 1;
+    uint32_t maxImages = m_selectedDeviceProperties.m_surfaceCapabilities.maxImageCount;
+    if (maxImages > 0) 
+    {
+        imageCount = std::min(maxImages, imageCount);
+    }
+
+    VkSwapchainCreateInfoKHR createInfo = {};
+    createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+    createInfo.surface = m_surface;
+    createInfo.minImageCount = imageCount;
+    createInfo.imageFormat = m_swapSurfaceFormat.format;
+    createInfo.imageColorSpace = m_swapSurfaceFormat.colorSpace;
+    createInfo.imageExtent = m_swapExtents;
+    createInfo.imageArrayLayers = 1;
+    createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
+    uint32_t queueFamilyIndices[] = {(uint32_t) m_selectedDeviceProperties.m_graphicsQueueFamilyIndex, (uint32_t) m_selectedDeviceProperties.m_presentationQueueFamilyIndex};
+
+    if (m_selectedDeviceProperties.m_graphicsQueueFamilyIndex != m_selectedDeviceProperties.m_presentationQueueFamilyIndex) 
+    {
+        createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+        createInfo.queueFamilyIndexCount = 2;
+        createInfo.pQueueFamilyIndices = queueFamilyIndices;
+    } 
+    else 
+    {
+        createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        createInfo.queueFamilyIndexCount = 0; 
+        createInfo.pQueueFamilyIndices = nullptr; 
+    }
+
+    createInfo.preTransform = m_selectedDeviceProperties.m_surfaceCapabilities.currentTransform;
+    createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+    createInfo.presentMode = m_swapPresentationMode;
+    createInfo.clipped = VK_TRUE;
+    createInfo.oldSwapchain = VK_NULL_HANDLE;
+
+    VkResult result = vkCreateSwapchainKHR(m_logicalDevice, &createInfo, nullptr, &m_swapChain);
+    if (result != VK_SUCCESS)
+    {
+        THROW_IP_EXCEPTION("Vulkan: Failed to build swap chain");
     }
 }
 
