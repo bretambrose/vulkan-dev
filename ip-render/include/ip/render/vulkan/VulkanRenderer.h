@@ -51,6 +51,8 @@ class VulkanRenderer : public IRenderer
         void InitializeSwapChainImageViews();
         void CleanupSwapChainImageViews();
 
+        void InitializeGraphicsPipeline();
+
         void BuildVulkanExtensionSet();
         IP::Vector<IP::String> GetOptionalVulkanExtensions() const;
 

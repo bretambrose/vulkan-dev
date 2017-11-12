@@ -12,6 +12,10 @@
 #include <ip/render/GlfwError.h>
 #include <ip/render/vulkan/VulkanDeviceProperties.h>
 
+
+#include <ip/core/memory/stl/Stream.h>
+#include <fstream>
+
 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugReportFlagsEXT flags,
                                                     VkDebugReportObjectTypeEXT objType,
                                                     uint64_t obj,
@@ -156,6 +160,7 @@ void VulkanRenderer::InitializeVulkan()
     InitializeDevice();
     InitializeSwapChain();
     InitializeSwapChainImageViews();
+    InitializeGraphicsPipeline();
 }
 
 void VulkanRenderer::InitializeVulkanInstance()
@@ -776,6 +781,10 @@ void VulkanRenderer::CleanupSwapChainImageViews()
     }
 
     m_swapChainImageViews.clear();
+}
+
+void VulkanRenderer::InitializeGraphicsPipeline()
+{
 }
 
 } // namespace IP
