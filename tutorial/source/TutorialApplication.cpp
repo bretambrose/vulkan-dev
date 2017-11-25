@@ -23,7 +23,7 @@ void TutorialApplication::Run()
 {
     while(m_renderingSystem->HandleInput())
     {
-        ;
+        m_renderingSystem->RenderFrame();
     }
 }
 

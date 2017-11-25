@@ -13,6 +13,7 @@ class IRenderer
 
         virtual void Initialize(const RendererConfig& config) = 0;
         virtual bool HandleInput() = 0;
+        virtual void RenderFrame() = 0;
         virtual void Shutdown() = 0;
        
 };

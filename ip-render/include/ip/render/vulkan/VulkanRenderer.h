@@ -23,6 +23,7 @@ class VulkanRenderer : public IRenderer
 
         virtual void Initialize(const RendererConfig& config) override;
         virtual bool HandleInput() override;
+        virtual void RenderFrame() override;
         virtual void Shutdown() override;
 
     private:
@@ -51,7 +52,15 @@ class VulkanRenderer : public IRenderer
         void InitializeSwapChainImageViews();
         void CleanupSwapChainImageViews();
 
+        void InitializeRenderPass();
         void InitializeGraphicsPipeline();
+
+        void InitializeFramebuffers();
+        void CleanupFramebuffers();
+
+        void InitializeCommandPool();
+        void InitializeCommandBuffers();
+        void InitializeSynchronization();
 
         void BuildVulkanExtensionSet();
         IP::Vector<IP::String> GetOptionalVulkanExtensions() const;
@@ -76,6 +85,14 @@ class VulkanRenderer : public IRenderer
         VkSurfaceKHR m_surface;
         VkSwapchainKHR m_swapChain;
         IP::Vector<VkImageView> m_swapChainImageViews;
+        VkRenderPass m_renderPass;
+        VkPipelineLayout m_pipelineLayout;
+        VkPipeline m_graphicsPipeline;
+        IP::Vector<VkFramebuffer> m_swapChainFramebuffers;
+        VkCommandPool m_commandPool;
+        IP::Vector<VkCommandBuffer> m_commandBuffers;
+        VkSemaphore m_imageAvailableSemaphore;
+        VkSemaphore m_renderFinishedSemaphore;
         
         VkQueue m_presentationQueue;
         VkQueue m_graphicsQueue;

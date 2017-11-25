@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdexcept>
+#include <ip/core/memory/stl/String.h>
 #include <ip/core/memory/stl/StringStream.h>
 
 #include <ip/core/UnreferencedParam.h>
