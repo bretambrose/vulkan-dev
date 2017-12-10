@@ -2,17 +2,31 @@
 
 #include <ip/core/memory/Memory.h>
 
+#include <ip/render/RendererApiType.h>
 #include <ip/render/vulkan/VulkanRenderer.h>
-
-static const char* IP_RENDER_ALLOCATION_TAG = "IPRender";
 
 namespace IP
 {
 
-IP::UniquePtr<IRenderer> IPRender::BuildRenderer(const RendererConfig& config)
+IP::UniquePtr<IRenderer> IPRender::BuildRenderer(RendererApiType api)
 {
-    IP::UniquePtr<IRenderer> renderer = IP::MakeUniqueUpcast<IP::VulkanRenderer, IP::IRenderer>(IP_RENDER_ALLOCATION_TAG);
-    renderer->Initialize(config);
+    IP::UniquePtr<IRenderer> renderer = nullptr;
+
+    switch (api)
+    {
+        case RendererApiType::Vulkan:
+            renderer = IP::MakeUniqueUpcast<IP::VulkanRenderer, IP::IRenderer>(MEMORY_TAG);
+            break;
+
+        case RendererApiType::OpenGL:
+            break;
+
+        case RendererApiType::DirectX:
+            break;
+
+        default:
+            break;
+    }
 
     return renderer;
 }

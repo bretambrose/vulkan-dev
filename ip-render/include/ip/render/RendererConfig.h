@@ -11,6 +11,8 @@ struct RendererConfig
 
     uint32_t m_windowWidth;
     uint32_t m_windowHeight;
+
+    bool m_windowed;
 };
 
 } // namespace IP

@@ -26,6 +26,10 @@ class VulkanRenderer : public IRenderer
         virtual void RenderFrame() override;
         virtual void Shutdown() override;
 
+        virtual const RendererConfig& GetConfig() const override { return m_config; }
+
+        virtual void EnumerateDisplayModes(IP::Vector<IP::DisplayMode>& modes) const;
+
     private:
 
         void InitializeVulkan();

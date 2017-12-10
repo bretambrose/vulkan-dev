@@ -1,7 +1,9 @@
 #include <vulkan-dev/tutorial/TutorialApplication.h>
 
+#include <ip/render/DisplayMode.h>
 #include <ip/render/IPRender.h>
 #include <ip/render/IRenderer.h>
+#include <ip/render/RendererApiType.h>
 #include <ip/render/RendererConfig.h>
 
 TutorialApplication::TutorialApplication() :
@@ -15,12 +17,26 @@ TutorialApplication::~TutorialApplication()
 
 void TutorialApplication::Initialize()
 {
-    IP::RendererConfig config = {"VulkanTutorial", 1024, 768};
-    m_renderingSystem = IP::IPRender::BuildRenderer(config);
+    IP::RendererConfig config = {"VulkanTutorial", 1024, 768, false};
+    m_renderingSystem = IP::IPRender::BuildRenderer(IP::RendererApiType::Vulkan);
+    if (!m_renderingSystem)
+    {
+        return;
+    }
+
+    IP::Vector<IP::DisplayMode> modes;
+    m_renderingSystem->EnumerateDisplayModes(modes);
+
+    m_renderingSystem->Initialize(config);
 }
 
 void TutorialApplication::Run()
 {
+    if (!m_renderingSystem)
+    {
+        return;
+    }
+
     while(m_renderingSystem->HandleInput())
     {
         m_renderingSystem->RenderFrame();

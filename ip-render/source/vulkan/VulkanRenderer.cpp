@@ -10,13 +10,11 @@
 #include <ip/core/UnreferencedParam.h>
 #include <ip/core/utils/FileUtils.h>
 
+#include <ip/render/DisplayMode.h>
 #include <ip/render/GlfwError.h>
 #include <ip/render/vulkan/ScopedVulkanShader.h>
 #include <ip/render/vulkan/VulkanDeviceProperties.h>
 
-
-#include <ip/core/memory/stl/Stream.h>
-#include <fstream>
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugReportFlagsEXT flags,
                                                     VkDebugReportObjectTypeEXT objType,
@@ -84,7 +82,15 @@ VulkanRenderer::VulkanRenderer() :
     m_swapExtents(),
     m_glfwTerminate(false)
 {
-    
+    glfwSetErrorCallback(GlfwErrorTracker::GlfwErrorCallback);
+
+    int initResult = glfwInit();
+    if (initResult != GLFW_TRUE)
+    {
+        THROW_IP_EXCEPTION("Failure initializing glfw.  Error code: ", initResult);
+    }
+
+    m_glfwTerminate = true;
 }
 
 VulkanRenderer::~VulkanRenderer()
@@ -100,16 +106,6 @@ void VulkanRenderer::Initialize(const RendererConfig& config)
     }
 
     m_config = config;
-
-    glfwSetErrorCallback(GlfwErrorTracker::GlfwErrorCallback);
-
-    int initResult = glfwInit();
-    if (initResult != GLFW_TRUE)
-    {
-        THROW_IP_EXCEPTION("Failure initializing glfw.  Error code: ", initResult);
-    }
-
-    m_glfwTerminate = true;
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
@@ -1166,6 +1162,29 @@ void VulkanRenderer::RenderFrame()
     presentConfig.pImageIndices = &imageIndex;
 
     vkQueuePresentKHR(m_presentationQueue, &presentConfig);
+}
+
+void VulkanRenderer::EnumerateDisplayModes(IP::Vector<IP::DisplayMode>& modes) const
+{
+    modes.clear();
+
+    GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
+    if (primaryMonitor == nullptr)
+    {
+        return;
+    }
+
+    int modeCount = 0;
+    const GLFWvidmode *videoModes = glfwGetVideoModes(primaryMonitor, &modeCount);
+
+    for (int i = 0; i < modeCount; ++i)
+    {
+        const GLFWvidmode *currentMode = videoModes + i;
+        IP::DisplayMode displayMode = {static_cast<uint32_t>(currentMode->width), 
+                                       static_cast<uint32_t>(currentMode->height),
+                                       static_cast<uint32_t>(currentMode->refreshRate)};
+        modes.push_back(displayMode);
+    }
 }
 
 } // namespace IP

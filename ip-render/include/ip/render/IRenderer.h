@@ -1,8 +1,11 @@
 #pragma once
 
+#include <ip/core/memory/stl/Vector.h>
+
 namespace IP
 {
 
+struct DisplayMode;
 struct RendererConfig;
 
 class IRenderer
@@ -15,6 +18,10 @@ class IRenderer
         virtual bool HandleInput() = 0;
         virtual void RenderFrame() = 0;
         virtual void Shutdown() = 0;
+
+        virtual const RendererConfig& GetConfig() const = 0;
+
+        virtual void EnumerateDisplayModes(IP::Vector<IP::DisplayMode>& modes) const = 0;
        
 };
 

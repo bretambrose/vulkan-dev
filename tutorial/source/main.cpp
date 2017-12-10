@@ -10,11 +10,11 @@ int main(int argc, char* argv[])
     IP_UNREFERENCED_PARAM(argc);
     IP_UNREFERENCED_PARAM(argv);
 
-    std::unique_ptr<TutorialApplication> app = nullptr;
+    IP::UniquePtr<TutorialApplication> app = nullptr;
 
     try
     {
-        app = std::make_unique<TutorialApplication>();
+        app = IP::MakeUnique<TutorialApplication>(MEMORY_TAG);
         app->Initialize();
         app->Run();
     } 
