@@ -1,5 +1,7 @@
 #include <ip/core/logging/StandardLogLineFormatter.h>
 
+#include <ip/core/logging/LogEntry.h>
+
 namespace IP
 {
 namespace Logging
@@ -7,8 +9,7 @@ namespace Logging
 
 void StandardLogLineFormatter::FormatLogLine(IP::StringStream& ss, LogEntry&& entry) const
 {
-    IP_UNREFERENCED_PARAM(ss);
-    IP_UNREFERENCED_PARAM(entry);
+    ss << IP::Time::FormatSystemTime(entry.m_time) << " [" << entry.m_levelName << "] " << entry.m_text;
 }
 
 } // namespace Logging

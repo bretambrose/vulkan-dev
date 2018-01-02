@@ -1,5 +1,7 @@
 #include <ip/core/logging/CompositeLogger.h>
 
+#include <ip/core/logging/LogEntry.h>
+
 namespace IP
 {
 namespace Logging

@@ -3,6 +3,7 @@
 #include <atomic>
 #include <condition_variable>
 
+#include <ip/core/logging/LogEntry.h>
 #include <ip/core/memory/stl/Vector.h>
 
 namespace IP

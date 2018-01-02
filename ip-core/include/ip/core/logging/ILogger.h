@@ -2,18 +2,14 @@
 
 #include <functional>
 
-#include <ip/core/memory/stl/String.h>
+#include <ip/core/memory/Memory.h>
 
 namespace IP
 {
 namespace Logging
 {
 
-struct LogEntry
-{
-    const char* m_levelName;
-    IP::String m_text;
-};
+struct LogEntry;
 
 class ILogger
 {

@@ -42,5 +42,6 @@ void SetLogLevel(LogLevel level)
     s_logLevel.store(level);
 }
 
+
 } // namespace Logging
 } // namespace IP

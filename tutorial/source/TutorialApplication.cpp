@@ -1,5 +1,7 @@
 #include <vulkan-dev/tutorial/TutorialApplication.h>
 
+#include <ip/core/logging/LogSystem.h>
+
 #include <ip/render/DisplayMode.h>
 #include <ip/render/IPRender.h>
 #include <ip/render/IRenderer.h>
@@ -17,6 +19,8 @@ TutorialApplication::~TutorialApplication()
 
 void TutorialApplication::Initialize()
 {
+    LOG_DEBUG("TutorialApplication::Initialize")
+
     IP::RendererConfig config = {"VulkanTutorial", 1024, 768, false};
     m_renderingSystem = IP::IPRender::BuildRenderer(IP::RendererApiType::Vulkan);
     if (!m_renderingSystem)
@@ -45,6 +49,8 @@ void TutorialApplication::Run()
 
 void TutorialApplication::Shutdown()
 {
+    LOG_DEBUG("TutorialApplication::Shutdown")
+
     if(m_renderingSystem)
     {
         m_renderingSystem->Shutdown();

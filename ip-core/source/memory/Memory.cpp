@@ -21,31 +21,43 @@
 
 #include <ip/core/UnreferencedParam.h>
 
-#ifdef USE_TBB_ALLOCATOR
-#include <tbb/scalable_allocator.h>
-#endif
-
 namespace IP
 {
 
+static IMemoryAllocator* s_globalAllocator = nullptr;
+
+ScopedMemoryAllocator::ScopedMemoryAllocator(IMemoryAllocator* allocator)
+{
+    s_globalAllocator = allocator;
+}
+
+ScopedMemoryAllocator::~ScopedMemoryAllocator()
+{
+    s_globalAllocator = nullptr;
+}
+
 void *Malloc( const char* tag, size_t memory_size )
 {
-    IP_UNREFERENCED_PARAM( tag );
-
-#ifdef USE_TBB_ALLOCATOR
-    return scalable_malloc( memory_size );
-#else
-    return malloc(memory_size);
-#endif
+    if (s_globalAllocator)
+    {
+        return s_globalAllocator->Allocate(tag, memory_size);
+    }
+    else
+    {
+        return malloc(memory_size);
+    }
 }
 
 void Free( void *memory_ptr )
 {
-#ifdef USE_TBB_ALLOCATOR
-    scalable_free( memory_ptr );
-#else
-    free(memory_ptr);
-#endif
+    if (s_globalAllocator)
+    {
+        s_globalAllocator->Free(memory_ptr);
+    }
+    else
+    {
+        free(memory_ptr);
+    }
 }
 
 } // namespace IP

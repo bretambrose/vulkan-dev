@@ -1,6 +1,7 @@
 #include <iostream>
-#include <memory>
 
+#include <ip/core/logging/LoggingMacros.h>
+#include <ip/core/logging/LogSystem.h>
 #include <ip/core/UnreferencedParam.h>
 
 #include <vulkan-dev/tutorial/TutorialApplication.h>
@@ -9,6 +10,9 @@ int main(int argc, char* argv[])
 {
     IP_UNREFERENCED_PARAM(argc);
     IP_UNREFERENCED_PARAM(argv);
+
+    IP::Logging::SetLogLevel(IP::Logging::LogLevel::Debug);
+    DECLARE_BACKGROUND_FILE_LOGGER(logScope, "Tutorial", ".")
 
     IP::UniquePtr<TutorialApplication> app = nullptr;
 
@@ -20,7 +24,7 @@ int main(int argc, char* argv[])
     } 
     catch (const std::exception &e)
     {
-        std::cerr << "Exception while running tutorial: " << e.what() << std::endl;
+        LOG_FATAL("Exception while running tutorial: ", e.what());
 
         if (app)
         {

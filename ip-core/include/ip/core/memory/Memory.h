@@ -9,6 +9,22 @@
 namespace IP
 {
 
+class IMemoryAllocator {
+    public:
+
+        virtual ~IMemoryAllocator() {}
+
+        virtual void *Allocate(const char* tag, size_t memory_size) = 0;
+        virtual void Free(void *memory) = 0;
+};
+
+class ScopedMemoryAllocator {
+    public:
+
+        ScopedMemoryAllocator(IMemoryAllocator* allocator);
+        ~ScopedMemoryAllocator();
+};
+
 void *Malloc( const char* tag, size_t memory_size );
 void Free( void *memory_ptr );
 

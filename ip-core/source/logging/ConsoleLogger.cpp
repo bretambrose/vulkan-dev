@@ -17,7 +17,7 @@ ConsoleLogger::ConsoleLogger(IP::UniquePtr<ILogLineFormatter>&& formatter) :
 
 ConsoleLogger::~ConsoleLogger()
 {
-
+    m_formatter = nullptr;
 }
 
 void ConsoleLogger::Log(LogEntry&& entry)
@@ -27,10 +27,6 @@ void ConsoleLogger::Log(LogEntry&& entry)
 
     std::cout << ss.str() << std::endl;
 }
-
-
-//    IP::UniquePtr<ILogLineFormatter> m_formatter;
-
 
 } // namespace Logging
 } // namespace IP

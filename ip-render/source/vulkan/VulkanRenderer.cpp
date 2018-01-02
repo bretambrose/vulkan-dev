@@ -6,6 +6,7 @@
 #include <stdexcept>
 
 #include <ip/core/debug/IPException.h>
+#include <ip/core/logging/LogSystem.h>
 #include <ip/core/memory/stl/Set.h>
 #include <ip/core/UnreferencedParam.h>
 #include <ip/core/utils/FileUtils.h>
@@ -33,7 +34,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugReportFlagsEXT flags,
     IP_UNREFERENCED_PARAM(layerPrefix);
     IP_UNREFERENCED_PARAM(userData);
 
-    std::cerr << "validation layer: " << msg << std::endl;
+    LOG_DEBUG("Vulkan validation layer: ", msg);
 
     return VK_FALSE;
 }

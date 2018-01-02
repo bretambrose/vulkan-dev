@@ -1,6 +1,5 @@
 #pragma once
 
-#include <ip/core/memory/stl/String.h>
 #include <ip/core/memory/stl/StringStream.h>
 
 namespace IP
