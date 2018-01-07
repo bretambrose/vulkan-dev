@@ -13,6 +13,7 @@
 
 #include <ip/render/DisplayMode.h>
 #include <ip/render/GlfwError.h>
+#include <ip/render/RenderDebugLevel.h>
 #include <ip/render/vulkan/ScopedVulkanShader.h>
 #include <ip/render/vulkan/VulkanDeviceProperties.h>
 
@@ -47,13 +48,14 @@ namespace Render
 static const char* CREATE_DEBUG_CALLBACK_PROCEDURE_NAME = "vkCreateDebugReportCallbackEXT";
 static const char* DESTROY_DEBUG_CALLBACK_PROCEDURE_NAME = "vkDestroyDebugReportCallbackEXT";
 
-#ifdef NDEBUG
-static const std::vector<const char *> s_debugValidationLayers = {};
-#else
 static const std::vector<const char *> s_debugValidationLayers = {
     "VK_LAYER_LUNARG_standard_validation"
 };
-#endif
+
+bool ShouldUseValidationLayers(const RendererConfig& config)
+{
+    return config.m_debugLevel == RenderDebugLevel::Debug;
+}
 
 VulkanRenderer::VulkanRenderer() :
     m_config(),
@@ -324,9 +326,10 @@ void VulkanRenderer::BuildVulkanExtensionSet()
         requiredExtensions.push_back(IP::String(glfwExtensions[i]));
     }
 
-#ifndef NDEBUG
-    requiredExtensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
-#endif // NDEBUG
+    if (ShouldUseValidationLayers(m_config))
+    {
+        requiredExtensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+    }
 
     for (const auto& requiredExtension : requiredExtensions)
     {
@@ -372,7 +375,10 @@ void VulkanRenderer::BuildValidationLayerSet()
 
     // build and check required validation layers, throw exception on missing
     IP::Vector<IP::String> requiredLayers;
-    std::copy(s_debugValidationLayers.cbegin(), s_debugValidationLayers.cend(), std::back_inserter(requiredLayers));
+    if (ShouldUseValidationLayers(m_config))
+    {
+        std::copy(s_debugValidationLayers.cbegin(), s_debugValidationLayers.cend(), std::back_inserter(requiredLayers));
+    }
 
     for(const auto& requiredLayer : requiredLayers)
     {
@@ -504,9 +510,9 @@ void VulkanRenderer::InitializeDevice()
     createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
     createInfo.ppEnabledExtensionNames = deviceExtensions.empty() ? nullptr : deviceExtensions.data();
 
-    createInfo.enabledLayerCount = static_cast<uint32_t>(s_debugValidationLayers.size());
-    if (createInfo.enabledLayerCount > 0)
+    if (ShouldUseValidationLayers(m_config))
     {
+        createInfo.enabledLayerCount = static_cast<uint32_t>(s_debugValidationLayers.size());
         createInfo.ppEnabledLayerNames = s_debugValidationLayers.data();
     } 
 
@@ -1127,9 +1133,10 @@ void VulkanRenderer::InitializeSynchronization()
 
 void VulkanRenderer::RenderFrame()
 {
-#ifndef NDEBUG
-    vkQueueWaitIdle(m_presentationQueue);
-#endif // NDEBUG
+    if (ShouldUseValidationLayers(m_config))
+    {
+        vkQueueWaitIdle(m_presentationQueue);
+    }
 
     uint32_t imageIndex;
     vkAcquireNextImageKHR(m_logicalDevice, m_swapChain, std::numeric_limits<uint64_t>::max(), m_imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
