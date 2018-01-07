@@ -4,6 +4,8 @@
 
 namespace IP
 {
+namespace Render
+{
 
 struct DisplayMode;
 struct RendererConfig;
@@ -21,10 +23,11 @@ class IRenderer
 
         virtual const RendererConfig& GetConfig() const = 0;
 
-        virtual void EnumerateDisplayModes(IP::Vector<IP::DisplayMode>& modes) const = 0;
+        virtual void EnumerateDisplayModes(IP::Vector<DisplayMode>& modes) const = 0;
        
 };
 
+} // namespace Render
 } // namespace IP
 
 

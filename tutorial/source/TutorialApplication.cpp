@@ -7,6 +7,7 @@
 #include <ip/render/IRenderer.h>
 #include <ip/render/RendererApiType.h>
 #include <ip/render/RendererConfig.h>
+#include <ip/render/RenderDebugLevel.h>
 
 TutorialApplication::TutorialApplication() :
     m_renderingSystem(nullptr)
@@ -21,14 +22,14 @@ void TutorialApplication::Initialize()
 {
     LOG_DEBUG("TutorialApplication::Initialize")
 
-    IP::RendererConfig config = {"VulkanTutorial", 1024, 768, false};
-    m_renderingSystem = IP::IPRender::BuildRenderer(IP::RendererApiType::Vulkan);
+    IP::Render::RendererConfig config = {IP::Render::RenderDebugLevel::Debug, "VulkanTutorial", 1024, 768, false};
+    m_renderingSystem = IP::Render::BuildRenderer(IP::Render::RendererApiType::Vulkan);
     if (!m_renderingSystem)
     {
         return;
     }
 
-    IP::Vector<IP::DisplayMode> modes;
+    IP::Vector<IP::Render::DisplayMode> modes;
     m_renderingSystem->EnumerateDisplayModes(modes);
 
     m_renderingSystem->Initialize(config);

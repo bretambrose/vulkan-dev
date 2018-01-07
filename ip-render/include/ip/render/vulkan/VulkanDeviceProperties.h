@@ -4,6 +4,8 @@
 
 namespace IP
 {
+namespace Render
+{
 
 class VulkanDeviceProperties
 {
@@ -34,6 +36,7 @@ class VulkanDeviceProperties
         std::vector<VkPresentModeKHR> m_presentationModes;
 };
 
+} // namespace Render
 } // namespace IP
 
 

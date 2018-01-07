@@ -4,8 +4,13 @@
 
 namespace IP
 {
+namespace Render
+{
+
     class IRenderer;
-}
+
+} // namespace Render
+} // namespace IP
 
 class TutorialApplication 
 {
@@ -22,6 +27,6 @@ class TutorialApplication
 
     private:
 
-        IP::UniquePtr<IP::IRenderer> m_renderingSystem;
+        IP::UniquePtr<IP::Render::IRenderer> m_renderingSystem;
 
 };

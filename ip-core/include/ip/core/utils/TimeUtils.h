@@ -19,6 +19,7 @@ bool GetFileLastModifiedTime(const IP::String &fileName, SystemTimePoint& lastMo
 double ConvertDurationToSeconds(SystemDuration duration);
 
 IP::String FormatSystemTime(SystemTimePoint timePoint);
+IP::String FormatTimeOfDay(SystemTimePoint timePoint);
 IP::String ConvertSystemTimeToFileSuffix(SystemTimePoint timePoint);
 
 } // namespace Time

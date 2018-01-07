@@ -41,6 +41,8 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugReportFlagsEXT flags,
 
 namespace IP
 {
+namespace Render
+{
 
 static const char* CREATE_DEBUG_CALLBACK_PROCEDURE_NAME = "vkCreateDebugReportCallbackEXT";
 static const char* DESTROY_DEBUG_CALLBACK_PROCEDURE_NAME = "vkDestroyDebugReportCallbackEXT";
@@ -1165,7 +1167,7 @@ void VulkanRenderer::RenderFrame()
     vkQueuePresentKHR(m_presentationQueue, &presentConfig);
 }
 
-void VulkanRenderer::EnumerateDisplayModes(IP::Vector<IP::DisplayMode>& modes) const
+void VulkanRenderer::EnumerateDisplayModes(IP::Vector<DisplayMode>& modes) const
 {
     modes.clear();
 
@@ -1181,11 +1183,12 @@ void VulkanRenderer::EnumerateDisplayModes(IP::Vector<IP::DisplayMode>& modes) c
     for (int i = 0; i < modeCount; ++i)
     {
         const GLFWvidmode *currentMode = videoModes + i;
-        IP::DisplayMode displayMode = {static_cast<uint32_t>(currentMode->width), 
-                                       static_cast<uint32_t>(currentMode->height),
-                                       static_cast<uint32_t>(currentMode->refreshRate)};
+        DisplayMode displayMode = {static_cast<uint32_t>(currentMode->width), 
+                                   static_cast<uint32_t>(currentMode->height),
+                                   static_cast<uint32_t>(currentMode->refreshRate)};
         modes.push_back(displayMode);
     }
 }
 
+} // namespace Render
 } // namespace IP

@@ -6,6 +6,8 @@
 
 namespace IP
 { 
+namespace Render
+{
 
 class ScopedVulkanShader
 {
@@ -22,4 +24,5 @@ class ScopedVulkanShader
         VkDevice m_device;
 };
 
+} // namespace Render
 } // namespace IP

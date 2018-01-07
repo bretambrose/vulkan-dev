@@ -7,6 +7,8 @@
 #include <ip/core/memory/stl/UnorderedMap.h>
 #include <ip/core/utils/TimeUtils.h>
 
+#include <filesystem>
+
 namespace IP
 {
 namespace Logging
@@ -15,7 +17,7 @@ namespace Logging
 class RollingFileLogger : public ILogger
 {
     public:
-        RollingFileLogger(IP::UniquePtr<ILogLineFormatter>&& formatter, IP::String filenamePrefix = "IP_Process_", IP::String directory = ".");
+        RollingFileLogger(IP::UniquePtr<ILogLineFormatter>&& formatter, IP::String filenamePrefix, const std::experimental::filesystem::path& directory);
         virtual ~RollingFileLogger();
 
         virtual void Log(LogEntry&& entry) override;
@@ -25,14 +27,14 @@ class RollingFileLogger : public ILogger
         void InitializeAndCleanDirectories();
 
         void RollLogFile(void);
-        IP::String BuildLogFileName(IP::Time::SystemTimePoint logInterval) const;
+        std::experimental::filesystem::path BuildLogFileName(IP::Time::SystemTimePoint logInterval) const;
 
         IP::UniquePtr<ILogLineFormatter> m_formatter;
 
         IP::UniquePtr<IP::OFStream> m_outputStream;
         IP::Time::SystemTimePoint m_outputLogInterval;
 
-        IP::String m_directory;
+        std::experimental::filesystem::path m_logFileDirectory;
         IP::String m_filenamePrefix;
 };
 

@@ -2,6 +2,8 @@
 
 namespace IP
 {
+namespace Render
+{
 
 struct DisplayMode
 {
@@ -11,4 +13,5 @@ struct DisplayMode
     uint32_t m_refreshRate;
 };
 
+} // namespace Render
 } // namespace IP

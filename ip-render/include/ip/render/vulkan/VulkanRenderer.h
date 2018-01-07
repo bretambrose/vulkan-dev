@@ -14,6 +14,9 @@ namespace IP
 
 class IPException;
 
+namespace Render
+{
+
 class VulkanRenderer : public IRenderer
 {
     public:
@@ -28,7 +31,7 @@ class VulkanRenderer : public IRenderer
 
         virtual const RendererConfig& GetConfig() const override { return m_config; }
 
-        virtual void EnumerateDisplayModes(IP::Vector<IP::DisplayMode>& modes) const;
+        virtual void EnumerateDisplayModes(IP::Vector<DisplayMode>& modes) const;
 
     private:
 
@@ -115,6 +118,7 @@ class VulkanRenderer : public IRenderer
        
 };
 
+} // namespace Render
 } // namespace IP
 
 

@@ -7,15 +7,17 @@
 
 namespace IP
 {
+namespace Render
+{
 
-IP::UniquePtr<IRenderer> IPRender::BuildRenderer(RendererApiType api)
+IP::UniquePtr<IRenderer> BuildRenderer(RendererApiType api)
 {
     IP::UniquePtr<IRenderer> renderer = nullptr;
 
     switch (api)
     {
         case RendererApiType::Vulkan:
-            renderer = IP::MakeUniqueUpcast<IP::VulkanRenderer, IP::IRenderer>(MEMORY_TAG);
+            renderer = IP::MakeUniqueUpcast<VulkanRenderer, IRenderer>(MEMORY_TAG);
             break;
 
         case RendererApiType::OpenGL:
@@ -31,5 +33,5 @@ IP::UniquePtr<IRenderer> IPRender::BuildRenderer(RendererApiType api)
     return renderer;
 }
 
-
+} // namespace Render
 } // namespace IP

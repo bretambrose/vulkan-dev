@@ -4,21 +4,17 @@
 
 namespace IP
 {
+namespace Render
+{
 
 enum class RendererApiType;
 
 class IRenderer;
 struct RendererConfig;
 
-class IPRender
-{
-    public:
+IP::UniquePtr<IRenderer> BuildRenderer(RendererApiType api);
 
-        static IP::UniquePtr<IRenderer> BuildRenderer(RendererApiType api);
-
-       
-};
-
+} // namespace Render
 } // namespace IP
 
 

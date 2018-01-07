@@ -2,7 +2,9 @@
 
 namespace IP
 {
-    
+namespace Render
+{
+
 enum class RendererApiType
 {
     Vulkan,
@@ -10,4 +12,5 @@ enum class RendererApiType
     DirectX
 };
 
+} // namespace Render
 } // namespace IP

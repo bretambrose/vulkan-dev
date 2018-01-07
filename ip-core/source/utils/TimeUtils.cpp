@@ -74,6 +74,22 @@ IP::String FormatSystemTime(SystemTimePoint timePoint)
     return ss.str();
 }
 
+IP::String FormatTimeOfDay(SystemTimePoint timePoint)
+{
+    auto cTime = std::chrono::system_clock::to_time_t(timePoint);
+    auto tmTime = localtime(cTime);
+
+    // Grungy hack assumes that system clock "starts" with 0 milliseconds elapsed
+    auto millisecondsElapsed = std::chrono::floor< std::chrono::milliseconds >(timePoint);
+    auto millisecondsRemainder = millisecondsElapsed.time_since_epoch().count() % 1000;
+
+    IP::StringStream ss;
+    ss << std::setfill('0') << std::internal;
+    ss << std::setw(2) << tmTime.tm_hour << ":" << std::setw(2) << tmTime.tm_min << ":" << std::setw(2) << tmTime.tm_sec << "." << std::setw(3) << millisecondsRemainder;
+
+    return ss.str();
+}
+
 IP::String ConvertSystemTimeToFileSuffix(SystemTimePoint timePoint)
 {
     auto cTime = std::chrono::system_clock::to_time_t(timePoint);

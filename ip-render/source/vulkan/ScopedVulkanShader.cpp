@@ -4,6 +4,8 @@
 
 namespace IP
 {
+namespace Render
+{
 
 ScopedVulkanShader::ScopedVulkanShader(const IP::Vector<uint8_t>& data, VkDevice device) :
     m_shaderModule(nullptr),
@@ -29,4 +31,5 @@ ScopedVulkanShader::~ScopedVulkanShader()
     }
 }
 
-}
+} // namespace Render
+} // namespace IP

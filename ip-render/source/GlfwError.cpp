@@ -2,6 +2,8 @@
 
 namespace IP
 {
+namespace Render
+{
 
 std::mutex GlfwErrorTracker::m_errorTableLock;
 IP::UnorderedMap<std::thread::id, GlfwError> GlfwErrorTracker::m_lastErrors;
@@ -26,4 +28,5 @@ void GlfwErrorTracker::GlfwErrorCallback(int errorCode, const char* message)
     m_lastErrors[std::this_thread::get_id()] = GlfwError(errorCode, message);
 }
 
+} // namespace Render
 } // namespace IP

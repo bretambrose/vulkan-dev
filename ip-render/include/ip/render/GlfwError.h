@@ -6,6 +6,8 @@
 
 namespace IP
 {
+namespace Render
+{
 
 struct GlfwError 
 {
@@ -44,4 +46,5 @@ class GlfwErrorTracker
 
 };
 
+} // namespace Render
 } // namespace IP
