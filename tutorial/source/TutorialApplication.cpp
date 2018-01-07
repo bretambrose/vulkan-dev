@@ -22,7 +22,13 @@ void TutorialApplication::Initialize()
 {
     LOG_DEBUG("TutorialApplication::Initialize")
 
-    IP::Render::RendererConfig config = {IP::Render::RenderDebugLevel::Debug, "VulkanTutorial", 1024, 768, false};
+    IP::Render::RendererConfig config = {};
+    config.m_debugLevel = IP::Render::RenderDebugLevel::Debug;
+    config.m_windowName = "VulkanTutorial";
+    config.m_windowWidth = 1024;
+    config.m_windowHeight = 768;
+    config.m_windowed = true;
+   
     m_renderingSystem = IP::Render::BuildRenderer(IP::Render::RendererApiType::Vulkan);
     if (!m_renderingSystem)
     {
@@ -44,7 +50,10 @@ void TutorialApplication::Run()
 
     while(m_renderingSystem->HandleInput())
     {
-        m_renderingSystem->RenderFrame();
+        if (!m_renderingSystem->RenderFrame())
+        {
+            break;
+        }
     }
 }
 

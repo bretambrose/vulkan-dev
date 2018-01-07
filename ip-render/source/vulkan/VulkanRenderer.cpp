@@ -103,30 +103,79 @@ VulkanRenderer::~VulkanRenderer()
     Shutdown();
 }
 
-void VulkanRenderer::Initialize(const RendererConfig& config)
+void VulkanRenderer::FillInConfig()
 {
-    if(!IsValidRenderConfig(config)) 
+    GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+    const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+
+    if (m_config.m_windowHeight == 0)
     {
-       THROW_IP_EXCEPTION("Invalid render config");
+        m_config.m_windowHeight = mode->height;
     }
 
+    if (m_config.m_windowWidth == 0)
+    {
+        m_config.m_windowWidth = mode->width;
+    }
+
+    if (m_config.m_redBits == 0)
+    {
+        m_config.m_redBits = static_cast<uint8_t>(mode->redBits);
+    }
+
+    if (m_config.m_greenBits == 0)
+    {
+        m_config.m_greenBits = static_cast<uint8_t>(mode->greenBits);
+    }
+
+    if (m_config.m_blueBits == 0)
+    {
+        m_config.m_blueBits = static_cast<uint8_t>(mode->blueBits);
+    }
+
+    if (m_config.m_refreshRate == 0)
+    {
+        m_config.m_refreshRate = mode->refreshRate;
+    }
+}
+
+void VulkanRenderer::Initialize(const RendererConfig& config)
+{
     m_config = config;
+    FillInConfig();
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+    glfwWindowHint(GLFW_RED_BITS, m_config.m_redBits);
+    glfwWindowHint(GLFW_GREEN_BITS, m_config.m_greenBits);
+    glfwWindowHint(GLFW_BLUE_BITS, m_config.m_blueBits);
+    glfwWindowHint(GLFW_REFRESH_RATE, m_config.m_refreshRate);
 
-    m_window = glfwCreateWindow(m_config.m_windowWidth, m_config.m_windowHeight, m_config.m_windowName.c_str(), nullptr, nullptr);
+    m_window = glfwCreateWindow(m_config.m_windowWidth, m_config.m_windowHeight, m_config.m_windowName.c_str(), m_config.m_windowed ? nullptr : glfwGetPrimaryMonitor(), nullptr);
     if (m_window == nullptr)
     {
         THROW_IP_EXCEPTION("Glfw failed to build window");
     }
 
-    InitializeVulkan();
+    glfwSetWindowUserPointer(m_window, this);
+    glfwSetWindowSizeCallback(m_window, VulkanRenderer::OnWindowResized);
+
+    InitializeRenderer();
+}
+
+void VulkanRenderer::OnWindowResized(GLFWwindow* window, int width, int height) 
+{
+    if (width == 0 || height == 0) 
+    {
+        return;
+    }
+
+    VulkanRenderer* renderer = reinterpret_cast<VulkanRenderer*>(glfwGetWindowUserPointer(window));
+    renderer->ResetSwapChainRelatedResources();
 }
 
 void VulkanRenderer::Shutdown()
 {
-    CleanupVulkan();
+    CleanupRenderer();
 
     if(m_window)
     {
@@ -153,17 +202,7 @@ bool VulkanRenderer::HandleInput()
     return true;
 }
 
-bool VulkanRenderer::IsValidRenderConfig(const RendererConfig& config) const
-{
-    if (config.m_windowHeight <= 0 || config.m_windowWidth <= 0) 
-    {
-        return false;
-    }
-
-    return true;
-}
-
-void VulkanRenderer::InitializeVulkan()
+void VulkanRenderer::InitializeRenderer()
 {
     InitializeVulkanInstance();
     InitializeValidationCallback();
@@ -177,6 +216,57 @@ void VulkanRenderer::InitializeVulkan()
     InitializeCommandPool();
     InitializeCommandBuffers();
     InitializeSynchronization();
+}
+
+void VulkanRenderer::ResetSwapChainRelatedResources()
+{
+    vkDeviceWaitIdle(m_logicalDevice);
+
+    CleanupSwapChainRelatedResources();
+
+    InitializeSwapChain();
+    InitializeSwapChainImageViews();
+    InitializeRenderPass();
+    InitializeGraphicsPipeline();
+    InitializeFramebuffers();
+    InitializeCommandBuffers();
+}
+
+void VulkanRenderer::CleanupSwapChainRelatedResources()
+{
+    CleanupFramebuffers();
+
+    if (!m_commandBuffers.empty())
+    {
+        vkFreeCommandBuffers(m_logicalDevice, m_commandPool, static_cast<uint32_t>(m_commandBuffers.size()), m_commandBuffers.data());
+        m_commandBuffers.clear();
+    }
+
+    if (m_graphicsPipeline)
+    {
+        vkDestroyPipeline(m_logicalDevice, m_graphicsPipeline, nullptr);
+        m_graphicsPipeline = VK_NULL_HANDLE;
+    }
+
+    if (m_pipelineLayout)
+    {
+        vkDestroyPipelineLayout(m_logicalDevice, m_pipelineLayout, nullptr);
+        m_pipelineLayout = VK_NULL_HANDLE;
+    }
+
+    if (m_renderPass)
+    {
+        vkDestroyRenderPass(m_logicalDevice, m_renderPass, nullptr);
+        m_renderPass = VK_NULL_HANDLE;
+    }
+
+    CleanupSwapChainImageViews();
+
+    if (m_swapChain)
+    {
+        vkDestroySwapchainKHR(m_logicalDevice, m_swapChain, nullptr);
+        m_swapChain = VK_NULL_HANDLE;
+    }
 }
 
 void VulkanRenderer::InitializeVulkanInstance()
@@ -219,7 +309,7 @@ void VulkanRenderer::InitializeVulkanInstance()
     }
 }
 
-void VulkanRenderer::CleanupVulkan()
+void VulkanRenderer::CleanupRenderer()
 {
     if (m_logicalDevice)
     {
@@ -238,40 +328,12 @@ void VulkanRenderer::CleanupVulkan()
         m_imageAvailableSemaphore = VK_NULL_HANDLE;
     }
 
-    m_commandBuffers.clear();
+    CleanupSwapChainRelatedResources();
 
     if (m_commandPool)
     {
         vkDestroyCommandPool(m_logicalDevice, m_commandPool, nullptr);
         m_commandPool = VK_NULL_HANDLE;
-    }
-
-    CleanupFramebuffers();
-
-    if (m_graphicsPipeline)
-    {
-        vkDestroyPipeline(m_logicalDevice, m_graphicsPipeline, nullptr);
-        m_graphicsPipeline = VK_NULL_HANDLE;
-    }
-
-    if (m_pipelineLayout)
-    {
-        vkDestroyPipelineLayout(m_logicalDevice, m_pipelineLayout, nullptr);
-        m_pipelineLayout = VK_NULL_HANDLE;
-    }
-
-    if (m_renderPass)
-    {
-        vkDestroyRenderPass(m_logicalDevice, m_renderPass, nullptr);
-        m_renderPass = VK_NULL_HANDLE;
-    }
-
-    CleanupSwapChainImageViews();
-
-    if (m_swapChain)
-    {
-        vkDestroySwapchainKHR(m_logicalDevice, m_swapChain, nullptr);
-        m_swapChain = VK_NULL_HANDLE;
     }
 
     if (m_logicalDevice)
@@ -533,8 +595,6 @@ void VulkanRenderer::InitializeDevice()
     {
         THROW_IP_EXCEPTION("Vulkan - could not fetch graphics queue");
     }
-
-    ExtractPhysicalDeviceProperties(m_physicalDevice, m_selectedDeviceProperties);
 }
 
 void VulkanRenderer::ExtractPhysicalDeviceProperties(VkPhysicalDevice device, VulkanDeviceProperties& deviceProperties) const
@@ -735,7 +795,11 @@ VkExtent2D VulkanRenderer::SelectSwapExtent() const
         return m_selectedDeviceProperties.m_surfaceCapabilities.currentExtent;
     }
 
-    VkExtent2D actualExtent = {m_config.m_windowWidth, m_config.m_windowHeight};
+    int windowWidth;
+    int windowHeight;
+    glfwGetWindowSize(m_window, &windowWidth, &windowHeight);
+
+    VkExtent2D actualExtent = { static_cast<uint32_t>(windowWidth), static_cast<uint32_t>(windowHeight) };
 
     actualExtent.width = std::max(m_selectedDeviceProperties.m_surfaceCapabilities.minImageExtent.width, std::min(m_selectedDeviceProperties.m_surfaceCapabilities.maxImageExtent.width, actualExtent.width));
     actualExtent.height = std::max(m_selectedDeviceProperties.m_surfaceCapabilities.minImageExtent.height, std::min(m_selectedDeviceProperties.m_surfaceCapabilities.maxImageExtent.height, actualExtent.height));
@@ -745,6 +809,8 @@ VkExtent2D VulkanRenderer::SelectSwapExtent() const
 
 void VulkanRenderer::InitializeSwapChain()
 {
+    ExtractPhysicalDeviceProperties(m_physicalDevice, m_selectedDeviceProperties);
+
     m_swapSurfaceFormat = SelectSwapSurfaceFormat();
     m_swapPresentationMode = SelectSwapPresentationMode();
     m_swapExtents = SelectSwapExtent();
@@ -1131,7 +1197,18 @@ void VulkanRenderer::InitializeSynchronization()
     }
 }
 
-void VulkanRenderer::RenderFrame()
+bool VulkanRenderer::HandleRenderingError(VkResult result)
+{
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
+    {
+        ResetSwapChainRelatedResources();
+        return true;
+    }
+    
+    return false;
+}
+
+bool VulkanRenderer::RenderFrame()
 {
     if (ShouldUseValidationLayers(m_config))
     {
@@ -1139,7 +1216,12 @@ void VulkanRenderer::RenderFrame()
     }
 
     uint32_t imageIndex;
-    vkAcquireNextImageKHR(m_logicalDevice, m_swapChain, std::numeric_limits<uint64_t>::max(), m_imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+    VkResult result = vkAcquireNextImageKHR(m_logicalDevice, m_swapChain, std::numeric_limits<uint64_t>::max(), m_imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+
+    if (result != VK_SUCCESS)
+    {
+        return HandleRenderingError(result);
+    }
 
     VkSemaphore waitSemaphores[] = { m_imageAvailableSemaphore };
     VkSemaphore signalSemaphores[] = { m_renderFinishedSemaphore };
@@ -1155,10 +1237,10 @@ void VulkanRenderer::RenderFrame()
     submitConfig.signalSemaphoreCount = 1;
     submitConfig.pSignalSemaphores = signalSemaphores;
 
-    VkResult result = vkQueueSubmit(m_graphicsQueue, 1, &submitConfig, VK_NULL_HANDLE);
+    result = vkQueueSubmit(m_graphicsQueue, 1, &submitConfig, VK_NULL_HANDLE);
     if (result != VK_SUCCESS)
     {
-        return; // Log, no exceptions inside rendering
+        return true; // Log, no exceptions inside rendering
     }
 
     VkSwapchainKHR swapChains[] = { m_swapChain };
@@ -1171,7 +1253,14 @@ void VulkanRenderer::RenderFrame()
     presentConfig.pSwapchains = swapChains;
     presentConfig.pImageIndices = &imageIndex;
 
-    vkQueuePresentKHR(m_presentationQueue, &presentConfig);
+    result = vkQueuePresentKHR(m_presentationQueue, &presentConfig);
+
+    if (result != VK_SUCCESS)
+    {
+        return HandleRenderingError(result);
+    }
+
+    return true;
 }
 
 void VulkanRenderer::EnumerateDisplayModes(IP::Vector<DisplayMode>& modes) const

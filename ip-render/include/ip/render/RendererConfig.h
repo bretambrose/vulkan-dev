@@ -19,6 +19,12 @@ struct RendererConfig
     uint32_t m_windowWidth;
     uint32_t m_windowHeight;
 
+    uint32_t m_refreshRate;
+
+    uint8_t m_redBits;
+    uint8_t m_greenBits;
+    uint8_t m_blueBits;
+
     bool m_windowed;
 };
 

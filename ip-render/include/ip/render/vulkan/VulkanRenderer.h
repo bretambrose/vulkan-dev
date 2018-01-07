@@ -26,7 +26,7 @@ class VulkanRenderer : public IRenderer
 
         virtual void Initialize(const RendererConfig& config) override;
         virtual bool HandleInput() override;
-        virtual void RenderFrame() override;
+        virtual bool RenderFrame() override;
         virtual void Shutdown() override;
 
         virtual const RendererConfig& GetConfig() const override { return m_config; }
@@ -35,8 +35,11 @@ class VulkanRenderer : public IRenderer
 
     private:
 
-        void InitializeVulkan();
-        void CleanupVulkan();
+        void InitializeRenderer();
+        void CleanupRenderer();
+
+        void ResetSwapChainRelatedResources();
+        void CleanupSwapChainRelatedResources();
 
         void InitializeVulkanInstance();
 
@@ -79,7 +82,11 @@ class VulkanRenderer : public IRenderer
         void BuildValidationLayerSet();
         IP::Vector<IP::String> GetOptionalValidationLayers() const;
 
-        bool IsValidRenderConfig(const RendererConfig& config) const;
+        void FillInConfig();
+
+        bool HandleRenderingError(VkResult result);
+
+        static void OnWindowResized(GLFWwindow* window, int width, int height);
 
         RendererConfig m_config;
 
