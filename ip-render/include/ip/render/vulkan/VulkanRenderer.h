@@ -25,8 +25,7 @@ class VulkanRenderer : public IRenderer
         virtual ~VulkanRenderer();
 
         virtual void Initialize(const RendererConfig& config) override;
-        virtual bool HandleInput() override;
-        virtual bool RenderFrame() override;
+        virtual void Run() override;
         virtual void Shutdown() override;
 
         virtual const RendererConfig& GetConfig() const override { return m_config; }
@@ -34,6 +33,9 @@ class VulkanRenderer : public IRenderer
         virtual void EnumerateDisplayModes(IP::Vector<DisplayMode>& modes) const;
 
     private:
+
+        bool HandleInput();
+        bool RenderFrame();
 
         void InitializeRenderer();
         void CleanupRenderer();
@@ -87,6 +89,7 @@ class VulkanRenderer : public IRenderer
         bool HandleRenderingError(VkResult result);
 
         static void OnWindowResized(GLFWwindow* window, int width, int height);
+        static void OnWindowRefresh(GLFWwindow* window);
 
         RendererConfig m_config;
 
@@ -122,7 +125,7 @@ class VulkanRenderer : public IRenderer
         VkExtent2D m_swapExtents;
 
         bool m_glfwTerminate;
-       
+        bool m_windowResized;
 };
 
 } // namespace Render

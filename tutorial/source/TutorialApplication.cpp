@@ -48,13 +48,7 @@ void TutorialApplication::Run()
         return;
     }
 
-    while(m_renderingSystem->HandleInput())
-    {
-        if (!m_renderingSystem->RenderFrame())
-        {
-            break;
-        }
-    }
+    m_renderingSystem->Run();
 }
 
 void TutorialApplication::Shutdown()

@@ -85,7 +85,8 @@ VulkanRenderer::VulkanRenderer() :
     m_swapSurfaceFormat(),
     m_swapPresentationMode(),
     m_swapExtents(),
-    m_glfwTerminate(false)
+    m_glfwTerminate(false),
+    m_windowResized(false)
 {
     glfwSetErrorCallback(GlfwErrorTracker::GlfwErrorCallback);
 
@@ -170,7 +171,7 @@ void VulkanRenderer::OnWindowResized(GLFWwindow* window, int width, int height)
     }
 
     VulkanRenderer* renderer = reinterpret_cast<VulkanRenderer*>(glfwGetWindowUserPointer(window));
-    renderer->ResetSwapChainRelatedResources();
+    renderer->m_windowResized = true;
 }
 
 void VulkanRenderer::Shutdown()
@@ -1215,6 +1216,12 @@ bool VulkanRenderer::RenderFrame()
         vkQueueWaitIdle(m_presentationQueue);
     }
 
+    if (m_windowResized == true)
+    {
+        ResetSwapChainRelatedResources();
+        m_windowResized = false;
+    }
+
     uint32_t imageIndex;
     VkResult result = vkAcquireNextImageKHR(m_logicalDevice, m_swapChain, std::numeric_limits<uint64_t>::max(), m_imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
 
@@ -1283,6 +1290,17 @@ void VulkanRenderer::EnumerateDisplayModes(IP::Vector<DisplayMode>& modes) const
                                    static_cast<uint32_t>(currentMode->height),
                                    static_cast<uint32_t>(currentMode->refreshRate)};
         modes.push_back(displayMode);
+    }
+}
+
+void VulkanRenderer::Run()
+{
+    while (HandleInput())
+    {
+        if (!RenderFrame())
+        {
+            break;
+        }
     }
 }
 

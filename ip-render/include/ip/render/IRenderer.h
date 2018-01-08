@@ -17,8 +17,7 @@ class IRenderer
         virtual ~IRenderer() {}
 
         virtual void Initialize(const RendererConfig& config) = 0;
-        virtual bool HandleInput() = 0;
-        virtual bool RenderFrame() = 0;
+        virtual void Run() = 0;
         virtual void Shutdown() = 0;
 
         virtual const RendererConfig& GetConfig() const = 0;
