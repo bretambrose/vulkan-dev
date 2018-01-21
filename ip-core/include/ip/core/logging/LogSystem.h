@@ -28,18 +28,18 @@ void SetLogLevel(LogLevel level);
 } // namespace Logging
 } // namespace IP
 
-#define LOG(level, ...) \
+#define LOG(level, streamExpression) \
     if (IP::Logging::GetLogLevel() <= level) { \
         IP::StringStream ss; \
-        ss << __VA_ARGS__; \
+        ss << streamExpression; \
         IP::Logging::Log(IP::Logging::LogEntry(IP::Logging::GetLogLevelName(level), std::move(ss.str()), IP::Time::GetCurrentSystemTime())); \
     }
     
-#define LOG_TRACE(...) LOG(IP::Logging::LogLevel::Trace, __VA_ARGS__)
-#define LOG_DEBUG(...) LOG(IP::Logging::LogLevel::Debug, __VA_ARGS__)
-#define LOG_INFO(...) LOG(IP::Logging::LogLevel::Info, __VA_ARGS__)
-#define LOG_WARN(...) LOG(IP::Logging::LogLevel::Warn, __VA_ARGS__)
-#define LOG_ERROR(...) LOG(IP::Logging::LogLevel::Error, __VA_ARGS__)
-#define LOG_FATAL(...) LOG(IP::Logging::LogLevel::Fatal, __VA_ARGS__)
+#define LOG_TRACE(streamExpression) LOG(IP::Logging::LogLevel::Trace, streamExpression)
+#define LOG_DEBUG(streamExpression) LOG(IP::Logging::LogLevel::Debug, streamExpression)
+#define LOG_INFO(streamExpression) LOG(IP::Logging::LogLevel::Info, streamExpression)
+#define LOG_WARN(streamExpression) LOG(IP::Logging::LogLevel::Warn, streamExpression)
+#define LOG_ERROR(streamExpression) LOG(IP::Logging::LogLevel::Error, streamExpression)
+#define LOG_FATAL(streamExpression) LOG(IP::Logging::LogLevel::Fatal, streamExpression)
 
 

@@ -12,6 +12,11 @@
 namespace IP
 {
 
+namespace Logging
+{
+enum class LogLevel;
+}
+
 class IPException;
 
 namespace Render
@@ -52,9 +57,11 @@ class VulkanRenderer : public IRenderer
 
         void InitializeDevice();
         void ExtractPhysicalDeviceProperties(VkPhysicalDevice device, VulkanDeviceProperties& deviceProperties) const;
+        void ExtractGeneralProperties(VkPhysicalDevice device, VulkanDeviceProperties& deviceProperties) const;
         void ExtractQueueFamilyProperties(VkPhysicalDevice device, VulkanDeviceProperties& deviceProperties) const;
         void ExtractSwapChainProperties(VkPhysicalDevice device, VulkanDeviceProperties& deviceProperties) const;
         int32_t ScorePhysicalDevice(VkPhysicalDevice device, VulkanDeviceProperties& deviceProperties) const;
+        void LogPhysicalDeviceScore(IP::Logging::LogLevel logLevel, const VulkanDeviceProperties& deviceProperties) const;
 
         void InitializeSwapChain();
         VkSurfaceFormatKHR SelectSwapSurfaceFormat() const;
@@ -77,7 +84,7 @@ class VulkanRenderer : public IRenderer
         void BuildVulkanExtensionSet();
         IP::Vector<IP::String> GetOptionalVulkanExtensions() const;
 
-        bool BuildDeviceExtensionSet(VkPhysicalDevice device, IP::Vector<IP::String>& extensions) const;
+        bool BuildDeviceExtensionSet(const VulkanDeviceProperties& deviceProperties, IP::Vector<IP::String>& extensions) const;
         IP::Vector<IP::String> GetOptionalDeviceExtensions() const;
         IP::Vector<IP::String> GetRequiredDeviceExtensions() const;
 

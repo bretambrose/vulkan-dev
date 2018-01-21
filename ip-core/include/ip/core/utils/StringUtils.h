@@ -3,40 +3,33 @@
 
 #include <ip/core/memory/stl/String.h>
 
+#include <ip/core/memory/stl/Vector.h>
+
+#include <functional>
 
 namespace IP
 {
 namespace StringUtils
 {
 
-	void String_To_WideString( const IP::String &source, IP::WString &target );
-	void String_To_WideString( const char *source, IP::WString &target );
+    template<typename T, typename Fn>
+    IP::String ToString(const IP::Vector<T>& items, const char *separator, Fn itemFunction)
+    {
+        IP::StringStream ss;
 
-	void WideString_To_String( const IP::WString &source, IP::String &target );
-	void WideString_To_String( const wchar_t *source, IP::String &target );
+        for (uint32_t i = 0; i < items.size(); ++i)
+        {
+            ss << itemFunction(items[i]);
+            if (i + 1 < items.size())
+            {
+                ss << separator;
+            }
+        }
 
-	void To_Upper_Case( const IP::String &source, IP::String &dest );
-	void To_Upper_Case( const IP::WString &source, IP::WString &dest );
+        return ss.str();
+    }
 
-	bool Convert( const IP::String &source, int32_t &value );
-	bool Convert( const IP::String &source, uint32_t &value );
-	bool Convert( const IP::String &source, int64_t &value );
-	bool Convert( const IP::String &source, uint64_t &value );
-	bool Convert( const IP::String &source, IP::WString &value );
-	bool Convert( const IP::String &source, IP::String &value );
-	bool Convert( const IP::String &source, float &value );
-	bool Convert( const IP::String &source, double &value );
-	bool Convert( const IP::String &source, bool &value );
-
-	bool Convert_Raw( const char *source, int32_t &value );
-	bool Convert_Raw( const char *source, uint32_t &value );
-	bool Convert_Raw( const char *source, int64_t &value );
-	bool Convert_Raw( const char *source, uint64_t &value );
-	bool Convert_Raw( const char *source, IP::WString &value );
-	bool Convert_Raw( const char *source, IP::String &value );
-	bool Convert_Raw( const char *source, float &value );
-	bool Convert_Raw( const char *source, double &value );
-	bool Convert_Raw( const char *source, bool &value );
+    IP::String ToString(const IP::Vector<IP::String>& items, const char *separator);
 
 } // namespace StringUtils
 } // namespace IP

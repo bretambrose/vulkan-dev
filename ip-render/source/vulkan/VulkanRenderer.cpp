@@ -10,6 +10,7 @@
 #include <ip/core/memory/stl/Set.h>
 #include <ip/core/UnreferencedParam.h>
 #include <ip/core/utils/FileUtils.h>
+#include <ip/core/utils/StringUtils.h>
 
 #include <ip/render/DisplayMode.h>
 #include <ip/render/GlfwError.h>
@@ -35,7 +36,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugReportFlagsEXT flags,
     IP_UNREFERENCED_PARAM(layerPrefix);
     IP_UNREFERENCED_PARAM(userData);
 
-    LOG_DEBUG("Vulkan validation layer: ", msg);
+    LOG_DEBUG("Vulkan validation layer: " << msg);
 
     return VK_FALSE;
 }
@@ -48,7 +49,7 @@ namespace Render
 static const char* CREATE_DEBUG_CALLBACK_PROCEDURE_NAME = "vkCreateDebugReportCallbackEXT";
 static const char* DESTROY_DEBUG_CALLBACK_PROCEDURE_NAME = "vkDestroyDebugReportCallbackEXT";
 
-static const std::vector<const char *> s_debugValidationLayers = {
+static const char *s_debugValidationLayers[] = {
     "VK_LAYER_LUNARG_standard_validation"
 };
 
@@ -142,8 +143,15 @@ void VulkanRenderer::FillInConfig()
 
 void VulkanRenderer::Initialize(const RendererConfig& config)
 {
+    LOG_INFO("VulkanRenderer::Initialize - Start");
+
     m_config = config;
     FillInConfig();
+
+    LOG_INFO("Render Window RGB depths: " << m_config.m_redBits << "/" << m_config.m_greenBits << "/" << m_config.m_blueBits);
+    LOG_INFO("Render Window Dimensions: " << m_config.m_windowWidth << " x " << m_config.m_windowHeight);
+    LOG_INFO("Render Window Refresh Rate: " << m_config.m_refreshRate << " Hz");
+    LOG_INFO("Render Window Mode: " << m_config.m_windowed ? "Windowed" : "FullScreen");
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RED_BITS, m_config.m_redBits);
@@ -161,6 +169,8 @@ void VulkanRenderer::Initialize(const RendererConfig& config)
     glfwSetWindowSizeCallback(m_window, VulkanRenderer::OnWindowResized);
 
     InitializeRenderer();
+
+    LOG_INFO("VulkanRenderer::Initialize - End");
 }
 
 void VulkanRenderer::OnWindowResized(GLFWwindow* window, int width, int height) 
@@ -176,6 +186,8 @@ void VulkanRenderer::OnWindowResized(GLFWwindow* window, int width, int height)
 
 void VulkanRenderer::Shutdown()
 {
+    LOG_INFO("VulkanRenderer::Shutdown - Start");
+
     CleanupRenderer();
 
     if(m_window)
@@ -189,6 +201,8 @@ void VulkanRenderer::Shutdown()
         glfwTerminate();
         m_glfwTerminate = false;
     }
+
+    LOG_INFO("VulkanRenderer::Shutdown - End");
 }
 
 bool VulkanRenderer::HandleInput()
@@ -221,9 +235,13 @@ void VulkanRenderer::InitializeRenderer()
 
 void VulkanRenderer::ResetSwapChainRelatedResources()
 {
+    LOG_INFO("VulkanRenderer::ResetSwapChainRelatedResources - Start");
+
     vkDeviceWaitIdle(m_logicalDevice);
 
     CleanupSwapChainRelatedResources();
+
+    ExtractPhysicalDeviceProperties(m_physicalDevice, m_selectedDeviceProperties);
 
     InitializeSwapChain();
     InitializeSwapChainImageViews();
@@ -231,6 +249,8 @@ void VulkanRenderer::ResetSwapChainRelatedResources()
     InitializeGraphicsPipeline();
     InitializeFramebuffers();
     InitializeCommandBuffers();
+
+    LOG_INFO("VulkanRenderer::ResetSwapChainRelatedResources - End");
 }
 
 void VulkanRenderer::CleanupSwapChainRelatedResources()
@@ -276,9 +296,13 @@ void VulkanRenderer::InitializeVulkanInstance()
     IP::Vector<const char *> rawLayerNames;
     std::for_each(m_validationLayerNames.cbegin(), m_validationLayerNames.cend(), [&](const IP::String& name){ rawLayerNames.push_back(name.c_str()); });
 
+    LOG_INFO("Vulkan Validation Layers Selected: " << IP::StringUtils::ToString(m_validationLayerNames, ", "));
+
     BuildVulkanExtensionSet();
     IP::Vector<const char *> rawExtensionNames;
     std::for_each(m_vulkanExtensionNames.cbegin(), m_vulkanExtensionNames.cend(), [&](const IP::String& name){ rawExtensionNames.push_back(name.c_str()); });
+
+    LOG_INFO("Vulkan Extensions Selected: " << IP::StringUtils::ToString(m_vulkanExtensionNames, ", "));
 
     VkApplicationInfo applicationInfo = {};
     applicationInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -371,6 +395,8 @@ void VulkanRenderer::BuildVulkanExtensionSet()
     IP::Vector<VkExtensionProperties> extensions(extensionCount);
     vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
 
+    LOG_INFO("Detected Vulkan Extensions:\n\t" << IP::StringUtils::ToString(extensions, ",\n\t", [](const VkExtensionProperties& props) { return IP::String(props.extensionName); }));
+
     // make an easy to search set
     IP::Set<IP::String> presentExtensions;
     for(const auto& extensionProperties : extensions)
@@ -393,6 +419,8 @@ void VulkanRenderer::BuildVulkanExtensionSet()
     {
         requiredExtensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
     }
+
+    LOG_INFO("Required Vulkan Extensions:\n\t" << IP::StringUtils::ToString(requiredExtensions, ",\n\t"));
 
     for (const auto& requiredExtension : requiredExtensions)
     {
@@ -430,6 +458,8 @@ void VulkanRenderer::BuildValidationLayerSet()
     IP::Vector<VkLayerProperties> availableLayers(layerCount);
     vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
 
+    LOG_INFO("Available Vulkan Validation Layers: \n\t" << IP::StringUtils::ToString(availableLayers, ",\n\t", [](const VkLayerProperties& layer) { return IP::String(layer.layerName); }));
+
     IP::Set<IP::String> layerSet;
     for (const auto& layer : availableLayers)
     {
@@ -440,8 +470,10 @@ void VulkanRenderer::BuildValidationLayerSet()
     IP::Vector<IP::String> requiredLayers;
     if (ShouldUseValidationLayers(m_config))
     {
-        std::copy(s_debugValidationLayers.cbegin(), s_debugValidationLayers.cend(), std::back_inserter(requiredLayers));
+        std::copy(s_debugValidationLayers, s_debugValidationLayers + sizeof(s_debugValidationLayers) / sizeof(s_debugValidationLayers[0]), std::back_inserter(requiredLayers));
     }
+
+    LOG_INFO("Required Vulkan Validation Layers: " << IP::StringUtils::ToString(requiredLayers, ", "));
 
     for(const auto& requiredLayer : requiredLayers)
     {
@@ -505,6 +537,15 @@ void VulkanRenderer::CleanupValidationCallback()
     }
 }
 
+void VulkanRenderer::LogPhysicalDeviceScore(IP::Logging::LogLevel logLevel, const VulkanDeviceProperties& deviceProperties) const
+{
+
+    LOG(logLevel, "[" << deviceProperties.m_name << "] GraphicsQueueFamilyIndex: " << deviceProperties.m_graphicsQueueFamilyIndex);
+    LOG(logLevel, "[" << deviceProperties.m_name << "] PresentationQueueFamilyIndex: " << deviceProperties.m_presentationQueueFamilyIndex);
+    LOG(logLevel, "[" << deviceProperties.m_name << "] SupportedExtensions: \n\t" << IP::StringUtils::ToString(deviceProperties.m_extensionNames, ",\n\t"));
+    LOG(logLevel, "[" << deviceProperties.m_name << "] SupportsRequiredExtensions: " << deviceProperties.m_supportsRequiredExtensions);
+}
+
 void VulkanRenderer::InitializeDevice()
 {
     uint32_t deviceCount = 0;
@@ -525,6 +566,10 @@ void VulkanRenderer::InitializeDevice()
     {
         VulkanDeviceProperties deviceProperties;
         int32_t score = ScorePhysicalDevice(device, deviceProperties);
+
+        LOG_DEBUG("Vulkan physical device " << deviceProperties.m_name << " detected with score " << score);
+        LogPhysicalDeviceScore(IP::Logging::LogLevel::Debug, deviceProperties);
+
         if (score > bestDeviceScore) 
         {
             bestDeviceScore = score;
@@ -538,7 +583,11 @@ void VulkanRenderer::InitializeDevice()
         THROW_IP_EXCEPTION("Vulkan: no physical devices meet application requirements");
     }
 
+    LOG_INFO("Vulkan physical device " << bestDeviceProperties.m_name << " selected with score " << bestDeviceScore);
+    LogPhysicalDeviceScore(IP::Logging::LogLevel::Info, bestDeviceProperties);
+
     m_physicalDevice = bestDevice;
+    m_selectedDeviceProperties = bestDeviceProperties;
 
     float queuePriority = 1.0f;
     IP::Vector<VkDeviceQueueCreateInfo> deviceQueueCreateInfos(bestDeviceProperties.m_graphicsQueueFamilyIndex != bestDeviceProperties.m_presentationQueueFamilyIndex ? 2 : 1);
@@ -562,10 +611,12 @@ void VulkanRenderer::InitializeDevice()
     createInfo.queueCreateInfoCount = static_cast<uint32_t>(deviceQueueCreateInfos.size());
     createInfo.pEnabledFeatures = &deviceFeatures;
 
-    if (!BuildDeviceExtensionSet(m_physicalDevice, m_deviceExtensionNames))
+    if (!BuildDeviceExtensionSet(m_selectedDeviceProperties, m_deviceExtensionNames))
     {
         THROW_IP_EXCEPTION("Vulkan: selected device does not have support for required extensions");
     }
+
+    LOG_INFO("Using device extensions:\n\t" << IP::StringUtils::ToString(m_deviceExtensionNames, ",\n\t"));
 
     IP::Vector<const char *> deviceExtensions;
     std::for_each(m_deviceExtensionNames.cbegin(), m_deviceExtensionNames.cend(), [&](const IP::String& name){deviceExtensions.push_back(name.c_str());});
@@ -573,11 +624,15 @@ void VulkanRenderer::InitializeDevice()
     createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
     createInfo.ppEnabledExtensionNames = deviceExtensions.empty() ? nullptr : deviceExtensions.data();
 
+    IP::Vector<const char *> validationLayers;
     if (ShouldUseValidationLayers(m_config))
     {
-        createInfo.enabledLayerCount = static_cast<uint32_t>(s_debugValidationLayers.size());
-        createInfo.ppEnabledLayerNames = s_debugValidationLayers.data();
+        std::for_each(m_validationLayerNames.cbegin(), m_validationLayerNames.cend(), [&validationLayers](const IP::String& layerName){ validationLayers.push_back(layerName.c_str()); });
+        createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+        createInfo.ppEnabledLayerNames = validationLayers.data();
     } 
+
+    LOG_INFO("Using device validation layers:\n\t" << IP::StringUtils::ToString(m_validationLayerNames, ",\n\t"));
 
     VkResult result = vkCreateDevice(m_physicalDevice, &createInfo, nullptr, &m_logicalDevice);
     if (result != VK_SUCCESS) 
@@ -600,8 +655,32 @@ void VulkanRenderer::InitializeDevice()
 
 void VulkanRenderer::ExtractPhysicalDeviceProperties(VkPhysicalDevice device, VulkanDeviceProperties& deviceProperties) const
 {
+    ExtractGeneralProperties(device, deviceProperties);
     ExtractQueueFamilyProperties(device, deviceProperties);
     ExtractSwapChainProperties(device, deviceProperties);
+}
+
+void VulkanRenderer::ExtractGeneralProperties(VkPhysicalDevice device, VulkanDeviceProperties& deviceProperties) const
+{
+    VkPhysicalDeviceProperties properties = {};
+    vkGetPhysicalDeviceProperties(device, &properties);
+
+    deviceProperties.m_name = IP::String(properties.deviceName);
+
+    // extensions
+    deviceProperties.m_extensionNames.clear();
+
+    // query what's available
+    uint32_t extensionCount = 0;
+    vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
+
+    IP::Vector<VkExtensionProperties> availableExtensions(extensionCount);
+    vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
+
+    std::for_each(availableExtensions.cbegin(), availableExtensions.cend(), [&deviceProperties](const VkExtensionProperties& properties){ deviceProperties.m_extensionNames.push_back(properties.extensionName); });
+
+    IP::Vector<IP::String> finalExtensions;
+    deviceProperties.m_supportsRequiredExtensions = BuildDeviceExtensionSet(deviceProperties, finalExtensions);
 }
 
 void VulkanRenderer::ExtractQueueFamilyProperties(VkPhysicalDevice device, VulkanDeviceProperties& deviceProperties) const
@@ -630,9 +709,6 @@ void VulkanRenderer::ExtractQueueFamilyProperties(VkPhysicalDevice device, Vulka
                 deviceProperties.m_presentationQueueFamilyIndex = i;
             }
         }
-
-        IP::Vector<IP::String> supportedExtensions;
-        deviceProperties.m_supportsRequiredExtensions = BuildDeviceExtensionSet(device, supportedExtensions);
 
         // if we've found a family with a single queue that satisfies all of our needs then stop, otherwise keep looking
         if (deviceProperties.MeetsOptimumQueueRequirements())
@@ -709,18 +785,12 @@ void VulkanRenderer::InitializeSurface()
     }
 }
 
-bool VulkanRenderer::BuildDeviceExtensionSet(VkPhysicalDevice device, IP::Vector<IP::String>& extensions) const
+bool VulkanRenderer::BuildDeviceExtensionSet(const VulkanDeviceProperties& deviceProperties, IP::Vector<IP::String>& extensions) const
 {
-    // query what's available
-    uint32_t extensionCount = 0;
-    vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
-
-    IP::Vector<VkExtensionProperties> availableExtensions(extensionCount);
-    vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
+    extensions.clear();
 
     // make an easy to search set
-    IP::Set<IP::String> presentExtensions;
-    std::for_each(availableExtensions.cbegin(), availableExtensions.cend(), [&](const VkExtensionProperties& properties){ presentExtensions.insert(IP::String(properties.extensionName)); });
+    IP::Set<IP::String> presentExtensions(deviceProperties.m_extensionNames.cbegin(), deviceProperties.m_extensionNames.cend());
 
     // build and check required extensions, throw exception on missing
     IP::Vector<IP::String> requiredExtensions = GetRequiredDeviceExtensions();
@@ -810,8 +880,6 @@ VkExtent2D VulkanRenderer::SelectSwapExtent() const
 
 void VulkanRenderer::InitializeSwapChain()
 {
-    ExtractPhysicalDeviceProperties(m_physicalDevice, m_selectedDeviceProperties);
-
     m_swapSurfaceFormat = SelectSwapSurfaceFormat();
     m_swapPresentationMode = SelectSwapPresentationMode();
     m_swapExtents = SelectSwapExtent();
