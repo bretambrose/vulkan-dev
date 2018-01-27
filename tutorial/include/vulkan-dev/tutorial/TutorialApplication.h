@@ -7,7 +7,7 @@ namespace IP
 namespace Render
 {
 
-    class IRenderer;
+    class BackgroundRenderingThread;
 
 } // namespace Render
 } // namespace IP
@@ -19,14 +19,11 @@ class TutorialApplication
         TutorialApplication();
         ~TutorialApplication();
 
-        void Initialize();
-
-        void Run();
-
-        void Shutdown();
+        void Start();
+        void Stop();
 
     private:
 
-        IP::UniquePtr<IP::Render::IRenderer> m_renderingSystem;
+        IP::UniquePtr<IP::Render::BackgroundRenderingThread> m_renderThread;
 
 };

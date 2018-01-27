@@ -87,7 +87,8 @@ VulkanRenderer::VulkanRenderer() :
     m_swapPresentationMode(),
     m_swapExtents(),
     m_glfwTerminate(false),
-    m_windowResized(false)
+    m_windowResized(false),
+    m_frameRateController(60)
 {
     glfwSetErrorCallback(GlfwErrorTracker::GlfwErrorCallback);
 
@@ -169,6 +170,8 @@ void VulkanRenderer::Initialize(const RendererConfig& config)
     glfwSetWindowSizeCallback(m_window, VulkanRenderer::OnWindowResized);
 
     InitializeRenderer();
+
+    m_frameRateController.ResetTargetFrameRate(m_config.m_refreshRate);
 
     LOG_INFO("VulkanRenderer::Initialize - End");
 }
@@ -1365,10 +1368,20 @@ void VulkanRenderer::Run()
 {
     while (HandleInput())
     {
-        if (!RenderFrame())
+        auto timeTilNextFrame = m_frameRateController.Service();
+        if (timeTilNextFrame.count() == 0)
         {
-            break;
+            LOG_TRACE("FrameRender Start");
+            bool success = RenderFrame();
+            LOG_TRACE("FrameRender End");
+            if (!success)
+            {
+                break;
+            }
         }
+
+        std::chrono::milliseconds trivialWait(0);
+        std::this_thread::sleep_for(trivialWait);
     }
 }
 

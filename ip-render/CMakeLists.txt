@@ -3,6 +3,7 @@ add_project(ip-render)
 file(GLOB RENDER_HEADERS "include/ip/render/*.h")
 file(GLOB RENDER_MODEL_HEADERS "include/ip/render/model/*.h")
 file(GLOB RENDER_SCENE_HEADERS "include/ip/render/scene/*.h")
+file(GLOB RENDER_UTILITIES_HEADERS "include/ip/render/utilities/*.h")
 file(GLOB RENDER_VULKAN_HEADERS "include/ip/render/vulkan/*.h")
 file(GLOB RENDER_VULKAN_VISITORS_HEADERS "include/ip/render/vulkan/visitors/*.h")
 
@@ -10,6 +11,7 @@ file(GLOB PROJECT_HEADERS
     ${RENDER_HEADERS}
     ${RENDER_MODEL_HEADERS}
     ${RENDER_SCENE_HEADERS}
+    ${RENDER_UTILITIES_HEADERS}
     ${RENDER_VULKAN_HEADERS}
     ${RENDER_VULKAN_VISITORS_HEADERS}
 )
@@ -17,6 +19,7 @@ file(GLOB PROJECT_HEADERS
 file(GLOB RENDER_SOURCE "source/*.cpp")
 file(GLOB RENDER_MODEL_SOURCE "source/model/*.cpp")
 file(GLOB RENDER_SCENE_SOURCE "source/scene/*.cpp")
+file(GLOB RENDER_UTILITIES_SOURCE "source/utilities/*.cpp")
 file(GLOB RENDER_VULKAN_SOURCE "source/vulkan/*.cpp")
 file(GLOB RENDER_VULKAN_VISITORS_SOURCE "source/vulkan/visitors/*.cpp")
 
@@ -24,6 +27,7 @@ file(GLOB PROJECT_SOURCE
     ${RENDER_SOURCE}
     ${RENDER_MODEL_SOURCE}
     ${RENDER_SCENE_SOURCE}
+    ${RENDER_UTILITIES_SOURCE}
     ${RENDER_VULKAN_SOURCE}
     ${RENDER_VULKAN_VISITORS_SOURCE}
 )
@@ -38,11 +42,13 @@ if(WIN32)
         source_group("Header Files" FILES ${RENDER_HEADERS})
         source_group("Header Files\\model" FILES ${RENDER_MODEL_HEADERS})
         source_group("Header Files\\scene" FILES ${RENDER_SCENE_HEADERS})
+        source_group("Header Files\\utilities" FILES ${RENDER_UTILITIES_HEADERS})
         source_group("Header Files\\vulkan" FILES ${RENDER_VULKAN_HEADERS})
         source_group("Header Files\\vulkan\\visitors" FILES ${RENDER_VULKAN_VISITORS_HEADERS})
         source_group("Source Files" FILES ${RENDER_SOURCE})
         source_group("Source Files\\model" FILES ${RENDER_MODEL_SOURCE})
         source_group("Source Files\\scene" FILES ${RENDER_SCENE_SOURCE})
+        source_group("Source Files\\utilities" FILES ${RENDER_UTILITIES_SOURCE})
         source_group("Source Files\\vulkan" FILES ${RENDER_VULKAN_SOURCE})
         source_group("Source Files\\vulkan\\visitors" FILES ${RENDER_VULKAN_VISITORS_SOURCE})
     endif(MSVC)

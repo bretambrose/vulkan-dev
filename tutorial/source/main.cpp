@@ -19,8 +19,7 @@ int main(int argc, char* argv[])
     try
     {
         app = IP::MakeUnique<TutorialApplication>(MEMORY_TAG);
-        app->Initialize();
-        app->Run();
+        app->Start();
     } 
     catch (const std::exception &e)
     {
@@ -28,14 +27,14 @@ int main(int argc, char* argv[])
 
         if (app)
         {
-            app->Shutdown();
+            app->Stop();
             app = nullptr;
         }
 
         return EXIT_FAILURE;
     }
 
-    app->Shutdown();
+    app->Stop();
 
     return EXIT_SUCCESS;
 }

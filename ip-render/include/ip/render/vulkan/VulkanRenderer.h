@@ -7,6 +7,7 @@
 
 #include <ip/render/IRenderer.h>
 #include <ip/render/RendererConfig.h>
+#include <ip/render/utilities/FrameRateLimiter.h>
 #include <ip/render/vulkan/VulkanDeviceProperties.h>
 
 namespace IP
@@ -133,6 +134,8 @@ class VulkanRenderer : public IRenderer
 
         bool m_glfwTerminate;
         bool m_windowResized;
+
+        IP::Render::FrameRateLimiter m_frameRateController;
 };
 
 } // namespace Render

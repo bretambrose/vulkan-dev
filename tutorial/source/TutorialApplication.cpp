@@ -2,6 +2,8 @@
 
 #include <ip/core/logging/LogSystem.h>
 
+#include <ip/render/utilities/BackgroundRenderingThread.h>
+
 #include <ip/render/DisplayMode.h>
 #include <ip/render/IPRender.h>
 #include <ip/render/IRenderer.h>
@@ -10,7 +12,7 @@
 #include <ip/render/RenderDebugLevel.h>
 
 TutorialApplication::TutorialApplication() :
-    m_renderingSystem(nullptr)
+    m_renderThread(nullptr)
 {
 }
 
@@ -18,9 +20,9 @@ TutorialApplication::~TutorialApplication()
 {
 }
 
-void TutorialApplication::Initialize()
+void TutorialApplication::Start()
 {
-    LOG_DEBUG("TutorialApplication::Initialize")
+    LOG_DEBUG("TutorialApplication::Start")
 
     IP::Render::RendererConfig config = {};
     config.m_debugLevel = IP::Render::RenderDebugLevel::Debug;
@@ -28,36 +30,18 @@ void TutorialApplication::Initialize()
     config.m_windowWidth = 1024;
     config.m_windowHeight = 768;
     config.m_windowed = true;
-   
-    m_renderingSystem = IP::Render::BuildRenderer(IP::Render::RendererApiType::Vulkan);
-    if (!m_renderingSystem)
-    {
-        return;
-    }
 
-    IP::Vector<IP::Render::DisplayMode> modes;
-    m_renderingSystem->EnumerateDisplayModes(modes);
-
-    m_renderingSystem->Initialize(config);
+    m_renderThread = IP::MakeUnique<IP::Render::BackgroundRenderingThread>(MEMORY_TAG);
+    m_renderThread->Start(config);
 }
 
-void TutorialApplication::Run()
+void TutorialApplication::Stop()
 {
-    if (!m_renderingSystem)
+    LOG_DEBUG("TutorialApplication::Stop")
+
+    if (m_renderThread)
     {
-        return;
-    }
-
-    m_renderingSystem->Run();
-}
-
-void TutorialApplication::Shutdown()
-{
-    LOG_DEBUG("TutorialApplication::Shutdown")
-
-    if(m_renderingSystem)
-    {
-        m_renderingSystem->Shutdown();
-        m_renderingSystem = nullptr;
+        m_renderThread->Join();
+        m_renderThread = nullptr;
     }
 }
