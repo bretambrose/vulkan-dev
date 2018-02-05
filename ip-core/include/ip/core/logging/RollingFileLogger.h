@@ -7,7 +7,11 @@
 #include <ip/core/memory/stl/UnorderedMap.h>
 #include <ip/core/utils/TimeUtils.h>
 
+#ifdef _WIN32
 #include <filesystem>
+#else
+#include <experimental/filesystem>
+#endif
 
 namespace IP
 {

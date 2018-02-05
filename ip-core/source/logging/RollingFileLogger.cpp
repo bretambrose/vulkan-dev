@@ -5,6 +5,7 @@
 #include <ip/core/utils/SystemUtils.h>
 
 #include <fstream>
+#include <string.h>
 
 namespace IP
 {
@@ -18,8 +19,8 @@ RollingFileLogger::RollingFileLogger(IP::UniquePtr<ILogLineFormatter>&& formatte
     m_formatter(std::move(formatter)),
     m_outputStream(nullptr),
     m_outputLogInterval(),
-    m_filenamePrefix(filenamePrefix),
-    m_logFileDirectory(directory)
+    m_logFileDirectory(directory),
+    m_filenamePrefix(filenamePrefix)
 {
     InitializeAndCleanDirectories();
 }
@@ -44,7 +45,7 @@ void RollingFileLogger::Log(LogEntry&& entry)
 
 void RollingFileLogger::RollLogFile()
 {
-    IP::Time::SystemTimePoint currentLogInterval = std::chrono::floor<std::chrono::hours>(IP::Time::GetCurrentSystemTime());
+    IP::Time::SystemTimePoint currentLogInterval = std::chrono::time_point_cast<std::chrono::hours>(IP::Time::GetCurrentSystemTime());
     if (currentLogInterval == m_outputLogInterval)
     {
         return;

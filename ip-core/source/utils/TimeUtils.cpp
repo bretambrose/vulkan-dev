@@ -63,7 +63,7 @@ IP::String FormatSystemTime(SystemTimePoint timePoint)
     auto yearRemainder = tmTime.tm_year % 100;
 
     // Grungy hack assumes that system clock "starts" with 0 milliseconds elapsed
-    auto millisecondsElapsed = std::chrono::floor< std::chrono::milliseconds >(timePoint);
+    auto millisecondsElapsed = std::chrono::time_point_cast< std::chrono::milliseconds >(timePoint);
     auto millisecondsRemainder = millisecondsElapsed.time_since_epoch().count() % 1000;
 
     IP::StringStream ss;
@@ -80,7 +80,7 @@ IP::String FormatTimeOfDay(SystemTimePoint timePoint)
     auto tmTime = localtime(cTime);
 
     // Grungy hack assumes that system clock "starts" with 0 milliseconds elapsed
-    auto millisecondsElapsed = std::chrono::floor< std::chrono::milliseconds >(timePoint);
+    auto millisecondsElapsed = std::chrono::time_point_cast< std::chrono::milliseconds >(timePoint);
     auto millisecondsRemainder = millisecondsElapsed.time_since_epoch().count() % 1000;
 
     IP::StringStream ss;

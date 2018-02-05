@@ -2,7 +2,7 @@
 #pragma once
 
 #include <ip/core/memory/stl/String.h>
-
+#include <ip/core/memory/stl/StringStream.h>
 #include <ip/core/memory/stl/Vector.h>
 
 #include <functional>

@@ -6,30 +6,49 @@ if (DEFINED SDK_PATH)
   get_filename_component(SDK_PATH_FINAL "${SDK_PATH}" REALPATH BASE_DIR "${CMAKE_BINARY_DIR}")
   if (EXISTS ${SDK_PATH_FINAL})
     #glm
-    set(GLM_PATH "${SDK_PATH_FINAL}/glm")
-    if (EXISTS ${GLM_PATH})
-      message(STATUS "adding ${GLM_PATH} to search path")
-      set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${GLM_PATH})
+    set(_GLM_PATH "${SDK_PATH_FINAL}/glm")
+    if (EXISTS ${_GLM_PATH} AND NOT EXISTS ${GLM_PATH})
+      set(GLM_PATH ${_GLM_PATH})
     endif()
 
     #glfw
-    set(GLFW_PATH "${SDK_PATH_FINAL}/glfw")
-    if (EXISTS ${GLFW_PATH})
-      message(STATUS "adding ${GLFW_PATH} to search path")
-      set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${GLFW_PATH})
+    set(_GLFW_PATH "${SDK_PATH_FINAL}/glfw")
+    if (EXISTS ${_GLFW_PATH} AND NOT EXISTS ${GLFW_PATH})
+      set(GLFW_PATH ${_GLFW_PATH})
     endif()
 
     #vulkan
-    set(VULKAN_PATH "${SDK_PATH_FINAL}/VulkanSDK")
-    if (EXISTS ${VULKAN_PATH})
-      message(STATUS "adding ${VULKAN_PATH} to search path")
-      set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${VULKAN_PATH})
+    set(_VULKAN_SDK "${SDK_PATH_FINAL}/VulkanSDK")
+    if (EXISTS ${_VULKAN_SDK} AND NOT EXISTS ${VULKAN_SDK})
+      set(VULKAN_SDK ${_VULKAN_SDK})
     endif()
   endif()
 endif()
 
+#glm
+if (EXISTS ${GLM_PATH})
+  message(STATUS "adding ${GLM_PATH} to search path")
+  set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${GLM_PATH})
+endif()
+
+#glfw
+if (EXISTS ${GLFW_PATH})
+  message(STATUS "adding ${GLFW_PATH} to search path")
+  set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${GLFW_PATH})
+endif()
+
+#vulkan
+if (EXISTS $ENV{VULKAN_SDK})
+  set(VULKAN_SDK $ENV{VULKAN_SDK})
+endif()
+
+if (EXISTS ${VULKAN_SDK})
+  message(STATUS "adding ${VULKAN_SDK} to search path")
+  set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${VULKAN_SDK})
+endif()
+
 # vulkan headers
-find_file(VULKAN_HEADER "Include/vulkan/vulkan.h")
+find_file(VULKAN_HEADER "include/vulkan/vulkan.h")
 if (EXISTS ${VULKAN_HEADER})
   get_filename_component(VULKAN_INCLUDES "${VULKAN_HEADER}" DIRECTORY)
   get_filename_component(VULKAN_INCLUDES "${VULKAN_INCLUDES}/.." REALPATH)
@@ -40,11 +59,16 @@ else()
 endif()
 
 # vulkan libraries
-if(PLATFORM_SIZE EQUAL 64)
-  find_file(VULKAN_LIBRARY "Lib/vulkan-1.lib")
+if (PLATFORM_WINDOWS)
+  if(PLATFORM_SIZE EQUAL 64)
+    find_file(VULKAN_LIBRARY "Lib/vulkan-1.lib")
+  else()
+    find_file(VULKAN_LIBRARY "Lib32/vulkan-1.lib")
+  endif()
 else()
-  find_file(VULKAN_LIBRARY "Lib32/vulkan-1.lib")
+  find_file(VULKAN_LIBRARY "lib/libvulkan.so")
 endif()
+
 if (EXISTS ${VULKAN_LIBRARY})
   get_filename_component(VULKAN_LIBRARIES "${VULKAN_LIBRARY}" DIRECTORY)
   link_directories(${VULKAN_LIBRARIES})
@@ -65,7 +89,11 @@ else()
 endif()
 
 # glfw libraries
-find_file(GLFW_LIBRARY "lib-vc2015/glfw3.lib") # This sucks
+if (PLATFORM_WINDOWS)
+  find_file(GLFW_LIBRARY "lib-vc2015/glfw3.lib") # This sucks
+else()
+  find_library(GLFW_LIBRARY "libglfw3.a")
+endif()
 
 if (EXISTS ${GLFW_LIBRARY})
   get_filename_component(GLFW_LIBRARIES "${GLFW_LIBRARY}" DIRECTORY)
@@ -85,3 +113,4 @@ if (EXISTS ${GLM_HEADER})
 else()
   message(FATAL_ERROR "Could not find glm header directory")
 endif()
+
