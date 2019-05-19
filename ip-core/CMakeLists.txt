@@ -22,12 +22,19 @@ file(GLOB CORE_LOGGING_SOURCE "source/logging/*.cpp")
 file(GLOB CORE_MEMORY_SOURCE "source/memory/*.cpp")
 file(GLOB CORE_UTILS_SOURCE "source/utils/*.cpp")
 
+if(PLATFORM_WINDOWS)
+    file(GLOB CORE_PLATFORM_SOURCE "source/windows/*.cpp")
+else()
+    file(GLOB CORE_PLATFORM_SOURCE "source/posix/*.cpp")
+endif()
+
 file(GLOB PROJECT_SOURCE
     ${CORE_SOURCE}
     ${CORE_DEBUG_SOURCE}
     ${CORE_LOGGING_SOURCE}
     ${CORE_MEMORY_SOURCE}
     ${CORE_UTILS_SOURCE}
+    ${CORE_PLATFORM_SOURCE}
 )
 
 file(GLOB PROJECT_UNIFIED_SRC
@@ -48,6 +55,7 @@ if(WIN32)
         source_group("Source Files\\logging" FILES ${CORE_LOGGING_SOURCE})
         source_group("Source Files\\memory" FILES ${CORE_MEMORY_SOURCE})
         source_group("Source Files\\utils" FILES ${CORE_UTILS_SOURCE})
+        source_group("Source Files\\windows" FILES ${CORE_PLATFORM_SOURCE})
     endif(MSVC)
 endif()
 

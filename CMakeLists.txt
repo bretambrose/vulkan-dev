@@ -21,13 +21,22 @@ include(cmake/common-dependencies.cmake)
 
 # default libraries to link in per-platform
 set(PLATFORM_DEP_LIBS "")
-#if(PLATFORM_WINDOWS)
-#    set(PLATFORM_DEP_LIBS Shlwapi DbgHelp)
-#elseif(PLATFORM_LINUX OR PLATFORM_APPLE)
-#    set(PLATFORM_DEP_LIBS pthread)
-#endif()
+if(PLATFORM_WINDOWS)
+    # set(PLATFORM_DEP_LIBS Shlwapi DbgHelp)
+elseif(PLATFORM_LINUX)
+    set(PLATFORM_DEP_LIBS X11 dl pthread stdc++fs)
+elseif(PLATFORM_APPLE)
+    #set(PLATFORM_DEP_LIBS ??)
+endif()
 
-set(RENDERING_LIBS glfw3 vulkan-1 ${PLATFORM_DEP_LIBS})
+# GLU GL Xrandr Xext
+
+if(PLATFORM_WINDOWS)
+    set(RENDERING_LIBS glfw3 vulkan-1 ${PLATFORM_DEP_LIBS})
+elseif(PLATFORM_LINUX OR PLATFORM_APPLE)
+    set(RENDERING_LIBS glfw3 vulkan ${PLATFORM_DEP_LIBS})
+endif()
+
 
 #targets
 add_subdirectory(ip-core)

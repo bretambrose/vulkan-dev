@@ -53,3 +53,8 @@ dkms.conf
 
 # 
 run/
+_build/
+.idea/
+cmake-build-*/
+*.spv
+*.log

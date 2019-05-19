@@ -74,8 +74,13 @@ def Main():
         print ('Error: Could not find Vulkan SDK')
         return 1
 
-    compilerPath = os.path.join(sdkPath, "Bin32", "glslangValidator.exe")
+    if os.name == 'nt':
+        compilerPath = os.path.join(sdkPath, "Bin32", "glslangValidator.exe")
+    else:
+        compilerPath = os.path.join(sdkPath, "bin", "glslangValidator")
+        
     if not os.path.isfile(compilerPath):
+        print('Error: ' + compilerPath)
         print('Error: could not find glslangValidator.exe')
         return 1
 

@@ -6,10 +6,15 @@
 
 #include <vulkan-dev/tutorial/TutorialApplication.h>
 
+#include <assert.h>
+
 int main(int argc, char* argv[]) 
 {
     IP_UNREFERENCED_PARAM(argc);
     IP_UNREFERENCED_PARAM(argv);
+
+    const char *layer_path = getenv("VK_LAYER_PATH");
+    assert(layer_path != nullptr);
 
     IP::Logging::SetLogLevel(IP::Logging::LogLevel::Debug);
     DECLARE_BACKGROUND_FILE_LOGGER(logScope, "Tutorial", ".")

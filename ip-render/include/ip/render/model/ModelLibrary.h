@@ -23,7 +23,7 @@ class ModelLibrary
 
     private:
 
-        IP::UnorderedMap<IP::String, std::shared_ptr<IP::Render::Model>> m_modelsByName;
+        // IP::UnorderedMap<IP::String, std::shared_ptr<IP::Render::Model>> m_modelsByName;
        
 };
 
